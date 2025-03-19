@@ -12,25 +12,16 @@ from github import Auth
 env = dotenv_values('./env/.env')
 
 # download latest version
-path = kagglehub.dataset_download("nikhil25803/github-dataset")
-path = os.path.join(path, 'github_dataset.csv')
+path = kagglehub.dataset_download("donbarbos/github-repos")
+path = os.path.join(path, 'repositories.csv')
 
 print("Path to dataset files:", path)
 
 df = pd.read_csv(path)
 df = df.dropna()  # drop all rows with NaN values
-df = df[df['stars_count'] > 100]  # drop all repos with less than 100 stars
-df = df[df['issues_count'] > 25]  # drop all repos with less than 25 issues open
+df = df[df['Stars'] > 100]  # drop all repos with less than 100 stars
+df = df[df['Issues'] > 25]  # drop all repos with less than 25 issues open
 df = df.drop_duplicates()  # drop dupes
-
-filter = [
-    'octocat/octocat.github.io',
-    'EddieHubCommunity/awesome-github-profiles',
-    'education/classroom-assistant',
-    'education/teachers_pet'
-]
-
-df = df[df['repositories'].isin(filter) == False]
 
 with pd.option_context('display.max_rows', None, 'display.max_columns', None):
     print(df)
