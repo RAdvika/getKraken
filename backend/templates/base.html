@@ -23,7 +23,7 @@
 
     <script>
         let selectedTags = [];
-        const tagList = ['javascript', 'python', 'java', 'c', 'c++', 'r', 'ocaml', 'perl', 'matlab'];
+        const tagList = ['javascript', 'python', 'java', 'typescript', 'csharp', 'cpp', 'php', 'shell', 'c', 'ruby'];
 
 
         function buttonTemplate(label, eventHandler) {
@@ -81,7 +81,16 @@
 
             function displayCards() {
                 document.getElementById("card-container").innerHTML = "";
-                fetch("{{ url_for('static', filename='test_data.json') }}")
+                if (selectedTags.length === 0) {
+                    alert("select atleast ONE language");
+                    return;
+                }
+                fetch("/repo?" + new URLSearchParams(
+                    { 
+                    repo : document.getElementById("filter-text-val").value,  
+                    lang : selectedTags
+                    }
+                ).toString())
                 .then(response => response.json())
                     .then(cardsData => {
                         //TODO: change to for loop for pagenation
