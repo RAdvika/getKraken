@@ -1,5 +1,6 @@
 <!doctype html>
 <title>{% block title %}{% endblock %} - Flaskr</title>
+
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -7,49 +8,138 @@
 <body>
     <div class="full-body-container">
         <div class="top-text">
-            <div class="google-colors">
-                <h1 id="google-4">4</h1>
-                <h1 id="google-3">3</h1>
-                <h1 id="google-0-1">0</h1>
-                <h1 id="google-0-2">0</h1>
+            <div class="title-container">
+                <div class="title">GetKraken</div>
             </div>
             <div class="input-box" onclick="sendFocus()">
                 <img src="{{ url_for('static', filename='images/mag.png') }}" />
-                <input placeholder="Search for a Keeping up with the Kardashians episode" id="filter-text-val" onkeyup="filterText()">
+                <input placeholder="Search for a GitHub Repository" id="filter-text-val" onkeydown="handleKeyPress(event)">
             </div>
+            <div class="tag-buttons" id="tag-buttons-container">BUTTON HERE</div>
         </div>
-        <div id="answer-box">
+        <div id="card-container">CARD HERE</div>
 
-        </div>
-    </div>
+
 
     <script>
+        let selectedTags = [];
+        const tagList = ['javascript', 'python', 'java', 'c', 'c++', 'r', 'ocaml', 'perl', 'matlab'];
 
-        function answerBoxTemplate(title,titleDesc,rating){
-            return `<div class=''>
-                <h3 class='episode-title'>${title}</h3>
-                <p class='episode-desc'>${titleDesc}</p>
-                <p class='episode-rating'>IMDB Rating: ${rating}</p>
-            </div>`
+
+        function buttonTemplate(label, eventHandler) {
+        return `<button class="tag-button" onclick="${eventHandler}">
+                    ${label}
+                </button>`;
         }
 
-        function sendFocus(){
-            document.getElementById('filter-text-val').focus()
+        function toggleTagSelection(tag) {
+            const button = event.target; 
+            const index = selectedTags.indexOf(tag);
+            if (index === -1) {
+                selectedTags.push(tag);
+                button.classList.add('selected'); 
+            } else {
+                selectedTags.splice(index, 1);
+                button.classList.remove('selected'); 
+            }
         }
 
-        function filterText(){
-            document.getElementById("answer-box").innerHTML = ""
-            console.log(document.getElementById("filter-text-val").value)
-            fetch("/episodes?" + new URLSearchParams({ title: document.getElementById("filter-text-val").value }).toString())
-            .then((response) => response.json())
-            .then((data) => data.forEach(row => {
-                
-                let tempDiv = document.createElement("div")
-                tempDiv.innerHTML = answerBoxTemplate(row.title,row.descr,row.imdb_rating)
-                document.getElementById("answer-box").appendChild(tempDiv)
-            }));
 
-        }
+            function generateButtonGrid() {
+                let gridHtml = '<div class="button-grid">';
+                tagList.forEach((tag) => {
+                    gridHtml += buttonTemplate(tag, `toggleTagSelection('${tag}')`);
+                });
+                gridHtml += '</div>';
+                return gridHtml;
+            }
+
+            document.getElementById('tag-buttons-container').innerHTML = generateButtonGrid();
+
+            function handleKeyPress(event) {
+                        if (event.key == "Enter") {
+                            displayCards();
+                        }
+                    }
             
+
+            function answerCardTemplate(name, desc, stars, issues, forks, url) {
+                return `<div class="card">
+                    <div class="card-content">
+                        <h2>${name}</h2>
+                        <p>${desc}</p>
+                        <p>Stars: ${stars}</p>
+                        <p>Open Issues: ${issues}</p>
+                        <p>Forks: ${forks}</p>
+                    </div>
+                    <div class="hidden-content">
+                        <p>EXPANDED TEXT</p>
+                        <a href="${url}" class="card-link" target="_blank">View Repository</a>
+                    </div>
+                </div>`;}
+
+
+            function displayCards() {
+                document.getElementById("card-container").innerHTML = "";
+                fetch("{{ url_for('static', filename='test_data.json') }}")
+                .then(response => response.json())
+                    .then(cardsData => {
+                        //TODO: change to for loop for pagenation
+
+                        cardsData.forEach(cardData => {
+                            let tempDiv = document.createElement("div");
+                            tempDiv.innerHTML = answerCardTemplate(
+                                cardData.repo_name, 
+                                cardData.readme, 
+                                cardData.stars, 
+                                cardData.issues, 
+                                cardData.forks, 
+                                cardData.url);
+                            document.getElementById("card-container").appendChild(tempDiv);
+                        });
+                        initializeCards();
+                    });
+            }
+
+
+
+            function initializeCards() {
+                const cards = document.querySelectorAll('.card');
+                cards.forEach(card => {
+                    card.addEventListener('click', function() {
+                        cards.forEach(c => {
+                        if (c !== this && c.classList.contains('expanded')) {
+                            c.classList.remove('expanded');
+                            }
+                        });
+                        this.classList.toggle('expanded');
+                    });
+                });
+            }
+
+            document.addEventListener('DOMContentLoaded', () => {
+                initializeCards();
+                document.getElementById('tag-buttons-container').innerHTML = generateButtonGrid();
+            });
+
+
+            // function sendFocus(){
+            //     document.getElementById('filter-text-val').focus()
+            // }
+
+            // function filterText(){
+            //     document.getElementById("answer-box").innerHTML = ""
+            //     console.log(document.getElementById("filter-text-val").value)
+            //     fetch("/episodes?" + new URLSearchParams({ title: document.getElementById("filter-text-val").value }).toString())
+            //     .then((response) => response.json())
+            //     .then((data) => data.forEach(row => {
+                    
+            //         let tempDiv = document.createElement("div")
+            //         tempDiv.innerHTML = answerBoxTemplate(row.title,row.descr,row.imdb_rating)
+            //         document.getElementById("answer-box").appendChild(tempDiv)
+            //     }));
+
+            // }
+                
     </script>
 </body>

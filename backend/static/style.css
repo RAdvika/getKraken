@@ -1,9 +1,13 @@
+.title{
+    font-size: 80px;
+    font-family: Arial, Helvetica, sans-serif;
+}
+.input-box{
+    background-color: white;
+}
 .full-body-container{
-    position: absolute;
-    top:0;
-    left:0;
-    right:0;
-    bottom:0;
+    position: relative;
+    background-color: whitesmoke;
     width:100%;
     height:100%;
     display: flex;
@@ -12,41 +16,50 @@
     flex-direction: column;
 }
 
-#google-c{
-    color:#4285F4;
-}
-
-#google-s{
-    color:#DB4437;
-}
-
-#google-4{
-    color:	#F4B400;
-}
-
-#google-3{
-    color:	#4285F4;
-}
-
-#google-0-1{
-    color:	#0F9D58;
-}
-
-#google-0-2{
-    color:#DB4437;
-}
-
-.google-colors{
+.card {
     display: flex;
-    align-items: center;
-    font-size: 48px;
-    font-family: 'Open Sans', sans-serif;
+    flex-direction: column; 
+    background-color: lightgray;
+    border: 1px solid #7a7a7a;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 5rem; 
+    box-shadow: 0 4px 8px rgba(140, 140, 140, 0.1);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: inherit; 
+    box-sizing: border-box; 
 }
 
-.google-colors h1{
-    margin-bottom: 0;
-    margin-right: 3px;
+.card h2 {
+    margin-top: 0;
+    font-size: 1.5rem; 
 }
+
+.card p {
+    margin-bottom: 0.5rem; 
+    font-size: 1rem; 
+}
+
+.card.expanded {
+    width: 60%; 
+    height: auto; 
+    z-index: 10;
+    position: relative;
+    margin: 5rem auto;
+}
+
+.hidden-content {
+    display: none;
+    margin-top: 1rem;
+}
+
+.card.expanded .hidden-content {
+    display: block;
+}
+
+
+
 
 .input-box{
     border-radius: 50px;
@@ -77,15 +90,29 @@
     outline: 0;
 }
 
-#answer-box{
-    width: 700px;
-    margin-top:50px; 
+.button-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin-top: 10px;
 }
 
-.episode-title{
-    font-family: 'Kanit', sans-serif;
+.tag-button {
+    padding: 10px 15px;
+    border: 1px solid #ccc;
+    cursor: pointer;
+    background-color: white;
+    border-radius: 5px;
+    text-align: center;
+    min-width: 60px;
+    min-height: 30px;
 }
 
-.episode-desc{
-    font-family: 'Montserrat', sans-serif;
+.tag-button.selected {
+    background-color: green; 
+    color: black;   
+}
+
+.tag-button:hover {
+    background-color: #b9b9b9;
 }
