@@ -1,3 +1,5 @@
+"""Generate database for commits & issues"""
+
 import json
 import os.path
 import kagglehub
