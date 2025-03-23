@@ -2,28 +2,32 @@ import re
 import nltk
 from nltk.corpus import wordnet
 
-def preprocess_query(query):
-    programming_languages = [
-    "python", "java", "javascript", "c++", "c", "c#", "typescript", "ruby", "go", "rust", "swift", "kotlin", 
-    "php", "html", "css", "typescript", "dart",
+top_langs = [
+    "javascript",
+    "python",
+    "java",
+    "typescript",
+    "csharp",
+    "cpp",
+    "php",
+    "shell",
+    "c",
+    "ruby",
+]
 
-    "r", "julia", "matlab",
-    "assembly", "fortran", "ada",
-    "haskell", "clojure", "elixir", "erlang", "f#", "ocaml",
 
-    "shell", "bash", "powershell", "perl",
-    "sql",
-    "verilog", "vhdl"] 
-    
-    #TODO:include top 10 for later
+def preprocess_query(query, top=True):
 
     tokens = nltk.word_tokenize(query.lower())
 
     language = None
+    lang_list = top_langs if top else all_langs()
+
     for token in tokens:
-        if token in programming_languages:
+        if token in lang_list:
             language = token
             tokens.remove(token)
+            break  # only one for now
 
     expanded_tokens = set(tokens)
     for token in tokens:
@@ -33,17 +37,63 @@ def preprocess_query(query):
 
     return list(expanded_tokens), language
 
-queries = [
-    "Implement cache using Python",
-    "Optimize code in C++",
-    "Hash map - Java?",
-    "Quickest array sorting using JavaScript?",
-    "How to efficiently SQL"
-]
 
-for query in queries: 
-    keywords, lang = preprocess_query(query)
-    print(f"Query: {query}")
-    print(f"Extracted Keywords: {keywords}")
-    print(f"Programming Language: {lang}")
-    print("_________________________________________________________________")
+def all_langs():
+
+    return [
+        "python",
+        "java",
+        "javascript",
+        "c++",
+        "c",
+        "c#",
+        "typescript",
+        "ruby",
+        "go",
+        "rust",
+        "swift",
+        "kotlin",
+        "php",
+        "html",
+        "css",
+        "dart",
+        "r",
+        "julia",
+        "matlab",
+        "assembly",
+        "fortran",
+        "ada",
+        "haskell",
+        "clojure",
+        "ocaml",
+        "shell",
+        "bash",
+        "powershell",
+        "perl",
+        "sql",
+        "verilog",
+        "vhdl",
+    ]
+
+
+def test_queries():
+    """Test suite for local testing (not run when imported as module)."""
+    queries = [
+        "Implement cache using Python",
+        "Optimize code in C++",
+        "Hash map - Java?",
+        "Quickest array sorting using JavaScript?",
+        "How to efficiently SQL",
+    ]
+
+    for query in queries:
+        keywords, lang = preprocess_query(query)
+        print(f"Query: {query}")
+        print(f"Extracted Keywords: {keywords}")
+        print(f"Programming Language: {lang}")
+        print("_________________________________________________________________")
+
+
+if __name__ == "__main__":
+    test_queries()
+
