@@ -2,6 +2,10 @@ import re
 import nltk
 from nltk.corpus import wordnet
 
+nltk.download("punkt_tab")
+nltk.download('punkt')
+nltk.download('wordnet')
+
 top_langs = [
     "javascript",
     "python",
