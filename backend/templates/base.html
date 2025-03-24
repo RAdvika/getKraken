@@ -2,9 +2,7 @@
 <title>{% block title %}{% endblock %} - Flaskr</title>
 
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Kanit&family=Montserrat&family=Open+Sans:wght@500&display=swap" rel="stylesheet">
+
 <body>
     <div class="full-body-container">
         <div class="top-text">
@@ -19,7 +17,8 @@
         </div>
         <div id="card-container"></div>
 
-
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
 
     <script>
         let selectedTags = [];
@@ -61,20 +60,22 @@
                             displayCards();
                         }
                     }
-            
+            function textRender(markdownText) {
+                return marked.parse(markdownText);
+            }            
 
-            function answerCardTemplate(name, desc, stars, issues, forks, url) {
+            function answerCardTemplate(name, desc, similarity) {
+                let text = textRender(desc)
+                let preview = text.length > 100 ? text.substring(0, 100): text;
                 return `<div class="card">
                     <div class="card-content">
                         <h2>${name}</h2>
-                        <p>${desc}</p>
-                        <p>Stars: ${stars}</p>
-                        <p>Open Issues: ${issues}</p>
-                        <p>Forks: ${forks}</p>
+                        <p>${preview}</p>
+                        <p>Similarity: ${similarity}</p>
                     </div>
                     <div class="hidden-content">
-                        <p>EXPANDED TEXT</p>
-                        <a href="${url}" class="card-link" target="_blank">View Repository</a>
+                        <p>${text}</p>
+                        <a href="https://github.com/${name}" class="card-link" target="_blank">View Repository</a>
                     </div>
                 </div>`;}
 
@@ -99,11 +100,8 @@
                             let tempDiv = document.createElement("div");
                             tempDiv.innerHTML = answerCardTemplate(
                                 cardData.repo_name, 
-                                cardData.readme, 
-                                cardData.stars, 
-                                cardData.issues, 
-                                cardData.forks, 
-                                cardData.url);
+                                cardData.readme_raw, 
+                                cardData.similarity);
                             document.getElementById("card-container").appendChild(tempDiv);
                         });
                         initializeCards();

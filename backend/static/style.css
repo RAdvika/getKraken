@@ -29,6 +29,7 @@
     transition: all 0.3s ease;
     color: inherit; 
     box-sizing: border-box; 
+    max-width: 85vw; 
 }
 
 .card h2 {
@@ -39,6 +40,9 @@
 .card p {
     margin-bottom: 0.5rem; 
     font-size: 1rem; 
+    word-wrap: break-word; 
+    overflow-wrap: break-word;
+    text-overflow: ellipsis;
 }
 
 .card.expanded {
