@@ -38,9 +38,11 @@ def sample_search(query, lang):
         lang_json = data.get(l)
         if lang_json:
             input_json[l] = lang_json
-        else:
-            print(f"NO LANG FOUND {type(lang)}")
-    return ranker(input_json, query).to_json(orient='records')
+    
+    with open("temp.json", 'w') as json_file:
+        json.dump(input_json, json_file)
+
+    return ranker(input_json, query)[:5].to_json(orient='records')
 
     
 
