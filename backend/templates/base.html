@@ -15,9 +15,9 @@
                 <img src="{{ url_for('static', filename='images/mag.png') }}" />
                 <input placeholder="Search for a GitHub Repository" id="filter-text-val" onkeydown="handleKeyPress(event)">
             </div>
-            <div class="tag-buttons" id="tag-buttons-container">BUTTON HERE</div>
+            <div class="tag-buttons" id="tag-buttons-container"></div>
         </div>
-        <div id="card-container">CARD HERE</div>
+        <div id="card-container"></div>
 
 
 
@@ -132,9 +132,9 @@
             });
 
 
-            // function sendFocus(){
-            //     document.getElementById('filter-text-val').focus()
-            // }
+            function sendFocus(){
+                document.getElementById('filter-text-val').focus()
+            }
 
             // function filterText(){
             //     document.getElementById("answer-box").innerHTML = ""
