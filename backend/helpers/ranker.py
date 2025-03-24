@@ -2,7 +2,8 @@ import json
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-from backend.helpers.parse_query import preprocess_query
+# from backend.helpers.parse_query import preprocess_query
+from .parse_query import preprocess_query
 
 
 def load_nested_repositories(json_file):
@@ -10,9 +11,11 @@ def load_nested_repositories(json_file):
     Load nested dataset structured as dataset[language][repo] from JSON file.
     Returns a flat dataframe with columns: ['repo_name', 'language', 'readme']
     """
+    # change function to take in json rather than db path
+    # with open(json_file, "r") as file:
+    #     data = json.load(file)
 
-    with open(json_file, "r") as file:
-        data = json.load(file)
+    data = json_file
     print("Sample loaded JSON keys:", list(data.keys())[:3])
 
     repo_list = []
@@ -32,6 +35,7 @@ def load_nested_repositories(json_file):
                             "repo_name": repo_name,
                             "language": language.lower(),
                             "readme": readme_clean,
+                            "readme_raw" : readme_content
                         }
                     )
 
@@ -45,7 +49,7 @@ def rank_repositories(keywords, df):
     """
     if not keywords:
         return pd.DataFrame()
-
+    
     query_text = " ".join(keywords)
     vectorizer = TfidfVectorizer(max_features=1000, stop_words="english")
 
@@ -56,26 +60,26 @@ def rank_repositories(keywords, df):
     df["similarity"] = similarity_scores
 
     ranked = df.sort_values(by="similarity", ascending=False)
-    return ranked[["repo_name", "language", "similarity"]]
+    return ranked[["repo_name","readme_raw", "language", "similarity"]]
 
 
-def process_query_and_rank(json_file, query):
+def process_query_and_rank(json_file : dict, query : str):
     """
     Given a user query, extract keywords and rank matching repos from dataset.
     Returns ranked result or empty list.
     """
-    keywords, language = preprocess_query(query)
+    keywords = preprocess_query(query)
     print(f"\nQuery: {query}")
     print(f"Keywords: {keywords}")
-    print(f"Language: {language}")
+    print(f"Language: {list(json_file.keys())}")
 
     df = load_nested_repositories(json_file)
 
-    if language:
-        df = df[df["language"] == language.lower()]
-        if df.empty:
-            print(f"No repositories found for language: {language}")
-            return pd.DataFrame()
+    # if language:
+    #     df = df[df["language"] == language.lower()]
+    #     if df.empty:
+    #         print(f"No repositories found for language: {language}")
+    #         return pd.DataFrame()
 
     ranked = rank_repositories(keywords, df)
 
