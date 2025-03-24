@@ -39,9 +39,6 @@ def sample_search(query, lang):
         if lang_json:
             input_json[l] = lang_json
     
-    with open("temp.json", 'w') as json_file:
-        json.dump(input_json, json_file)
-
     return ranker(input_json, query)[:5].to_json(orient='records')
 
     
