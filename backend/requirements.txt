@@ -20,7 +20,7 @@ kagglehub==0.3.10
 kiwisolver==1.4.7
 MarkupSafe==3.0.2
 matplotlib==3.9.4
-numpy==2.0.2
+numpy==2.2.4
 nltk==3.9.1
 packaging==24.2
 pandas==2.2.3
@@ -36,7 +36,7 @@ pytz==2025.1
 PyYAML==6.0.2
 requests==2.32.3
 scikit-learn==1.6.1
-scipy==1.13.1
+scipy==1.15.2
 SQLAlchemy==2.0.39
 six==1.17.0
 threadpoolctl==3.5.0
