@@ -2,6 +2,10 @@ import re
 import nltk
 from nltk.corpus import wordnet
 
+nltk.download("punkt_tab")
+nltk.download('punkt')
+nltk.download('wordnet')
+
 top_langs = [
     "javascript",
     "python",
@@ -20,22 +24,13 @@ def preprocess_query(query, top=True):
 
     tokens = nltk.word_tokenize(query.lower())
 
-    language = None
-    lang_list = top_langs if top else all_langs()
-
-    for token in tokens:
-        if token in lang_list:
-            language = token
-            tokens.remove(token)
-            break  # only one for now
-
     expanded_tokens = set(tokens)
     for token in tokens:
         for syn in wordnet.synsets(token):
             for lemma in syn.lemmas():
                 expanded_tokens.add(lemma.name().replace("_", " "))
 
-    return list(expanded_tokens), language
+    return list(expanded_tokens)
 
 
 def all_langs():
@@ -96,4 +91,3 @@ def test_queries():
 
 if __name__ == "__main__":
     test_queries()
-

@@ -228,7 +228,7 @@
             }  
         function updateRepoInfo(data) {
             const wrapper = document.getElementById("repo-info-wrapper");
-            markdownReadme = textRender()
+            markdownReadme = textRender(data.readme_raw)
             wrapper.querySelector("#repo-title").textContent = data.repo_name;
             wrapper.querySelector("#repo-info-content").innerHTML = `<pre>${markdownReadme}</pre>`;
             wrapper.querySelector(".repo-stars .number").textContent = formatNumber(data.stars);
