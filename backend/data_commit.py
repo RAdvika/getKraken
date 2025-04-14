@@ -206,7 +206,7 @@ def get_commit_page(owner: str, repo_name: str, default_branch: str, after: str 
             'sha': node['oid'],
             'header': node['messageHeadline'],
             'body': node['messageBody'],
-            'url': node['url'],
+            'url': node['url']
             # ! turned off for above reason
             # 'changes': changes
         }
