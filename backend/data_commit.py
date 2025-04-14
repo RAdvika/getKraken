@@ -33,8 +33,8 @@ class HTMLStripper(HTMLParser):
 
 env = dotenv_values('./env/.env')
 
-DB_PATH = './db/pysample_data.json'
-DB_WRITE = './db/dist_pysample_data.json'
+DB_PATH = './db/sample_data.json'
+DB_WRITE = './db/sample_data.json'
 SAMPLE_SIZE = 3000
 
 GRAPHQL_URL = 'https://api.github.com/graphql'
