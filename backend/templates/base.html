@@ -2,153 +2,264 @@
 <title>{% block title %}{% endblock %} - Flaskr</title>
 
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Kanit&family=Montserrat&family=Open+Sans:wght@500&display=swap" rel="stylesheet">
 <body>
     <div class="full-body-container">
-        <div class="top-text">
-            <div class="title-container">
-                <div class="title">GetKraken</div>
+        <div class="header">
+            <div class="search-wrapper">
+                <div class="search-text">search</div>
+                <div class="search-bar" onclick="sendFocus()">
+                    <input placeholder="Search for a GitHub Repository" id="filter-text-val" onkeydown="handleKeyPress(event)">
+                </div>
             </div>
-            <div class="input-box" onclick="sendFocus()">
-                <img src="{{ url_for('static', filename='images/mag.png') }}" />
-                <input placeholder="Search for a GitHub Repository" id="filter-text-val" onkeydown="handleKeyPress(event)">
-            </div>
-            <div class="tag-buttons" id="tag-buttons-container">BUTTON HERE</div>
+            <div class="tag-buttons-wrapper" id="tag-buttons-container"></div> 
+            <div class="logo-wrapper">
+                <div class="logo-text">Get_Kraken</div>
+            </div> 
         </div>
-        <div id="card-container">CARD HERE</div>
+        <div class="content">
+            <div class="search-results-wrapper"> 
+                <div class="seach-result-display-wrapper" id="card-container"></div>
+                <div class="seach-result-pagination-wrapper" id="pagination-container"></div>
+            </div>
+            <div class="result-wrapper">
+                <div class="repo-info-wrapper" id="repo-info-wrapper">
+                    <div class="repo-info-header">
+                        <div class="repo-title" id="repo-title">-</div>
+                        <div class="repo-metadata" id="repo-metadata"></div>
+                        <div class="repo-stars"><div class="text">Stars:</div><div class="number">0</div></div>
+                        <div class="repo-forks"><div class="text">Forks:</div><div class="number">0</div></div>
+                        <div class="repo-issues"><div class="text">Issues:</div><div class="number">0</div></div>
+                    </div>
+                    <div class="repo-info-content" id="repo-info-content">
+                        Select a repository to view details.
+                    </div>
+                </div>
+            </div>
+        </div>  
+    </div>
 
-
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
     <script>
-        let selectedTags = [];
-        const tagList = ['javascript', 'python', 'java', 'typescript', 'csharp', 'cpp', 'php', 'shell', 'c', 'ruby'];
+        // Credit to unescapeJs library
+                
+        /**
+         * \\ - matches the backslash which indicates the beginning of an escape sequence
+         * (
+         *   u\{([0-9A-Fa-f]+)\} - first alternative; matches the variable-length hexadecimal escape sequence (\u{ABCD0})
+         * |
+         *   u([0-9A-Fa-f]{4}) - second alternative; matches the 4-digit hexadecimal escape sequence (\uABCD)
+         * |
+         *   x([0-9A-Fa-f]{2}) - third alternative; matches the 2-digit hexadecimal escape sequence (\xA5)
+         * |
+         *   ([1-7][0-7]{0,2}|[0-7]{2,3}) - fourth alternative; matches the up-to-3-digit octal escape sequence (\5 or \512)
+         * |
+         *   (['"tbrnfv0\\]) - fifth alternative; matches the special escape characters (\t, \n and so on)
+         * |
+         *   \U([0-9A-Fa-f]+) - sixth alternative; matches the 8-digit hexadecimal escape sequence used by python (\U0001F3B5)
+         * )
+         */
+        const jsEscapeRegex = /\\(u\{([0-9A-Fa-f]+)\}|u([0-9A-Fa-f]{4})|x([0-9A-Fa-f]{2})|([1-7][0-7]{0,2}|[0-7]{2,3})|(['"tbrnfv0\\]))|\\U([0-9A-Fa-f]{8})/g;
 
+        const usualEscapeSequences = {
+            '0': '\0',
+            'b': '\b',
+            'f': '\f',
+            'n': '\n',
+            'r': '\r',
+            't': '\t',
+            'v': '\v',
+            '\'': '\'',
+            '"': '"',
+            '\\': '\\'
+        };
 
-        function buttonTemplate(label, eventHandler) {
-        return `<button class="tag-button" onclick="${eventHandler}">
-                    ${label}
-                </button>`;
-        }
+        const fromHex = (str) => String.fromCodePoint(parseInt(str, 16));
+        const fromOct = (str) => String.fromCodePoint(parseInt(str, 8));
 
-        function toggleTagSelection(tag) {
-            const button = event.target; 
-            const index = selectedTags.indexOf(tag);
-            if (index === -1) {
-                selectedTags.push(tag);
-                button.classList.add('selected'); 
-            } else {
-                selectedTags.splice(index, 1);
-                button.classList.remove('selected'); 
-            }
-        }
-
-
-            function generateButtonGrid() {
-                let gridHtml = '<div class="button-grid">';
-                tagList.forEach((tag) => {
-                    gridHtml += buttonTemplate(tag, `toggleTagSelection('${tag}')`);
-                });
-                gridHtml += '</div>';
-                return gridHtml;
-            }
-
-            document.getElementById('tag-buttons-container').innerHTML = generateButtonGrid();
-
-            function handleKeyPress(event) {
-                        if (event.key == "Enter") {
-                            displayCards();
-                        }
-                    }
-            
-
-            function answerCardTemplate(name, desc, stars, issues, forks, url) {
-                return `<div class="card">
-                    <div class="card-content">
-                        <h2>${name}</h2>
-                        <p>${desc}</p>
-                        <p>Stars: ${stars}</p>
-                        <p>Open Issues: ${issues}</p>
-                        <p>Forks: ${forks}</p>
-                    </div>
-                    <div class="hidden-content">
-                        <p>EXPANDED TEXT</p>
-                        <a href="${url}" class="card-link" target="_blank">View Repository</a>
-                    </div>
-                </div>`;}
-
-
-            function displayCards() {
-                document.getElementById("card-container").innerHTML = "";
-                if (selectedTags.length === 0) {
-                    alert("select atleast ONE language");
-                    return;
+        const unescapeJs = (string) => {
+            return string.replace(jsEscapeRegex, (_, __, varHex, longHex, shortHex, octal, specialCharacter, python) => {
+                if (varHex !== undefined) {
+                    return fromHex(varHex);
+                } else if (longHex !== undefined) {
+                    return fromHex(longHex);
+                } else if (shortHex !== undefined) {
+                    return fromHex(shortHex);
+                } else if (octal !== undefined) {
+                    return fromOct(octal);
+                } else if (python !== undefined) {
+                    return fromHex(python);
+                } else {
+                    return usualEscapeSequences[specialCharacter];
                 }
-                fetch("/repo?" + new URLSearchParams(
-                    { 
-                    repo : document.getElementById("filter-text-val").value,  
-                    lang : selectedTags
+            });
+        }
+    </script>
+    <script>
+        const selectedTags = [];
+        const tagList = ['javascript', 'python', 'java', 'typescript', 'csharp', 'cpp', 'php', 'shell', 'c', 'ruby'];
+        const ITEM_PER_PAGE = 5;
+        let currentPage = 1;
+        let totalItems = 0;
+        const repoDataMap = new Map();
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeTagButtons();
+            setupSearch();
+        });
+
+        function setupSearch() {
+            const input = document.getElementById('filter-text-val');
+            input.addEventListener('keydown', handleKeyPress);
+            document.querySelector('.search-bar').addEventListener('click', () => input.focus());
+        }
+
+        function sendFocus() {
+            document.getElementById('filter-text-val').focus();
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === "Enter") {
+                currentPage = 1;
+                displayCards();
+            }
+        }
+
+        function initializeTagButtons() {
+            const container = document.getElementById('tag-buttons-container');
+            container.innerHTML = tagList.map(tag => `<button class="tag-button" data-tag="${tag}">${tag}</button>`).join('');
+
+            container.querySelectorAll('.tag-button').forEach(button => {
+                button.addEventListener('click', () => {
+                    const tag = button.dataset.tag;
+                    const index = selectedTags.indexOf(tag);
+                    if (index === -1) {
+                        selectedTags.push(tag);
+                        button.classList.add('selected');
+                    } else {
+                        selectedTags.splice(index, 1);
+                        button.classList.remove('selected');
                     }
-                ).toString())
-                .then(response => response.json())
-                    .then(cardsData => {
-                        //TODO: change to for loop for pagenation
-
-                        cardsData.forEach(cardData => {
-                            let tempDiv = document.createElement("div");
-                            tempDiv.innerHTML = answerCardTemplate(
-                                cardData.repo_name, 
-                                cardData.readme, 
-                                cardData.stars, 
-                                cardData.issues, 
-                                cardData.forks, 
-                                cardData.url);
-                            document.getElementById("card-container").appendChild(tempDiv);
-                        });
-                        initializeCards();
-                    });
-            }
-
-
-
-            function initializeCards() {
-                const cards = document.querySelectorAll('.card');
-                cards.forEach(card => {
-                    card.addEventListener('click', function() {
-                        cards.forEach(c => {
-                        if (c !== this && c.classList.contains('expanded')) {
-                            c.classList.remove('expanded');
-                            }
-                        });
-                        this.classList.toggle('expanded');
-                    });
+                    currentPage = 1;
                 });
-            }
+            });
+        }
 
-            document.addEventListener('DOMContentLoaded', () => {
-                initializeCards();
-                document.getElementById('tag-buttons-container').innerHTML = generateButtonGrid();
+        function formatNumber(n) {
+            n = Number(n);
+            return isNaN(n) ? '-' : n >= 1e6 ? (n / 1e6).toFixed(2) + 'M' : n >= 1e3 ? (n / 1e3).toFixed(2) + 'K' : n.toString();
+        }
+
+        async function displayCards() {
+            const cardContainer = document.getElementById("card-container");
+            repoDataMap.clear();
+            cardContainer.innerHTML = "<div class='loading'>Loading results...</div>";
+            try {
+                if (!selectedTags.length) throw new Error("Please select at least one language");
+
+                const query = document.getElementById("filter-text-val").value.trim();
+                const data = await fetchRepoData(query, selectedTags, currentPage, ITEM_PER_PAGE);
+
+                renderResults(data);
+            } catch (err) {
+                cardContainer.innerHTML = `<div class='error'>Error: ${err.message}</div>`;
+                console.error(err);
+            }
+        }
+
+        async function fetchRepoData(query, languages, page, perPage) {
+            const params = new URLSearchParams({ repo: query, page, per_page: perPage });
+            languages.forEach(lang => params.append("lang", lang));
+            const res = await fetch(`/repo?${params.toString()}`);
+            if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+
+            const json = await res.json();
+            totalItems = json.total;
+            return JSON.parse(json.results);
+        }
+
+        function renderResults(items) {
+            const container = document.getElementById("card-container");
+            container.innerHTML = "";
+
+            if (!items.length) return container.innerHTML = "<div class='no-results'>No results found</div>";
+
+            items.forEach(item => {
+                repoDataMap.set(item.repo_name, item);
+                container.innerHTML += `
+                    <div class="repo-card" data-repo-name="${item.repo_name}">
+                        ${answerCardTemplate(item.repo_name, item.language, item.readme_raw, item.similarity)}
+                    </div>
+                `;
             });
 
+            container.addEventListener('click', e => {
+                const card = e.target.closest('.repo-card');
+                if (card) {
+                    const name = card.dataset.repoName;
+                    const data = repoDataMap.get(name);
+                    if (data) updateRepoInfo(data);
+                }
+            });
 
-            // function sendFocus(){
-            //     document.getElementById('filter-text-val').focus()
-            // }
+            renderPaginationControls();
+        }
 
-            // function filterText(){
-            //     document.getElementById("answer-box").innerHTML = ""
-            //     console.log(document.getElementById("filter-text-val").value)
-            //     fetch("/episodes?" + new URLSearchParams({ title: document.getElementById("filter-text-val").value }).toString())
-            //     .then((response) => response.json())
-            //     .then((data) => data.forEach(row => {
-                    
-            //         let tempDiv = document.createElement("div")
-            //         tempDiv.innerHTML = answerBoxTemplate(row.title,row.descr,row.imdb_rating)
-            //         document.getElementById("answer-box").appendChild(tempDiv)
-            //     }));
+        function answerCardTemplate(name, language, readme, similarity = 0) {
+            const snippet = readme.slice(0, 350).replace(/\\\S+|b\['#]/g, '') + ' ...';
+            const shortName = name.split('/').pop();
+            return `
+                <div class="search-result-card">
+                    <div class="preview-header">
+                        <div class="preview-repo-name">/${shortName}</div>
+                        <div class="preview-repo-language">${language}</div>
+                    </div>
+                    <div class="preview-content">${snippet}</div>
+                    <div class="preview-similarity">
+                        <div class="similarity-text">Similarity</div>
+                        <div class="similarity-bar-wrapper">
+                            <div class="similarity-bar" style="width:${similarity}%"></div>
+                        </div>
+                    </div>
+                </div>`;
+        }
+        function textRender(markdownText) {
+                return marked.parse(unescapeJs(markdownText));
+            }  
+        function updateRepoInfo(data) {
+            const wrapper = document.getElementById("repo-info-wrapper");
+            markdownReadme = textRender()
+            wrapper.querySelector("#repo-title").textContent = data.repo_name;
+            wrapper.querySelector("#repo-info-content").innerHTML = `<pre>${markdownReadme}</pre>`;
+            wrapper.querySelector(".repo-stars .number").textContent = formatNumber(data.stars);
+            wrapper.querySelector(".repo-forks .number").textContent = formatNumber(data.forks);
+            wrapper.querySelector(".repo-issues .number").textContent = formatNumber(data.issues);
+        }
 
-            // }
-                
+        function renderPaginationControls() {
+            const container = document.getElementById("pagination-container");
+            const totalPages = Math.ceil(totalItems / ITEM_PER_PAGE);
+            container.innerHTML = "";
+            if (totalPages <= 1) return;
+
+            const prev = document.createElement("button");
+            prev.className = `page-button ${currentPage === 1 ? 'disabled' : ''}`;
+            prev.innerHTML = "&laquo; Previous";
+            prev.onclick = async () => { if (currentPage > 1) { currentPage--; await displayCards(); } };
+
+            const next = document.createElement("button");
+            next.className = `page-button ${currentPage === totalPages ? 'disabled' : ''}`;
+            next.innerHTML = "Next &raquo;";
+            next.onclick = async () => { if (currentPage < totalPages) { currentPage++; await displayCards(); } };
+
+            const info = document.createElement("span");
+            info.className = "page-info";
+            info.textContent = `Page ${currentPage} of ${totalPages}`;
+
+            const wrapper = document.createElement("div");
+            wrapper.className = "pagination";
+            wrapper.append(prev, info, next);
+            container.appendChild(wrapper);
+        }
     </script>
 </body>
