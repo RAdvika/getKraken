@@ -4,7 +4,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 # from backend.helpers.parse_query import preprocess_query
-from parse_query import preprocess_query
+from .parse_query import preprocess_query
 
 
 # def load_nested_repositories(json_file):
@@ -99,11 +99,12 @@ def rank_repositories(keywords, df):
     if not keywords:
         return pd.DataFrame()
 
-    query_text = " ".join(keywords)
+    query_text = " ".join(keywords[0])
     vectorizer = TfidfVectorizer(max_features=1000, stop_words="english")
     tfidf_matrix = vectorizer.fit_transform(df["combined_text"])
     query_vector = vectorizer.transform([query_text])
     df["similarity"] = cosine_similarity(query_vector, tfidf_matrix).flatten()
+    df["language"] =  keywords[1]
 
     ranked = df.sort_values(by="similarity", ascending=False)
     return ranked[["repo_name", "readme_raw", "stars", "forks", "similarity"]]
