@@ -2,16 +2,15 @@
 
 import json
 import os.path
-from typing import Tuple, List
-
+import re
 import requests
-from html.parser import HTMLParser
+from typing import Tuple, List
 from io import StringIO
 
 import kagglehub
 import pandas as pd
-import re
 
+from html.parser import HTMLParser
 from dotenv import dotenv_values
 from github import Github, GithubException
 from github import Auth
@@ -34,7 +33,8 @@ class HTMLStripper(HTMLParser):
 
 env = dotenv_values('./env/.env')
 
-DB_PATH = './db/sample_data.json'
+DB_PATH = './db/pysample_data.json'
+DB_WRITE = './db/dist_pysample_data.json'
 SAMPLE_SIZE = 3000
 
 GRAPHQL_URL = 'https://api.github.com/graphql'
@@ -206,7 +206,7 @@ def get_commit_page(owner: str, repo_name: str, default_branch: str, after: str 
             'sha': node['oid'],
             'header': node['messageHeadline'],
             'body': node['messageBody'],
-            'url': node['url']
+            'url': node['url'],
             # ! turned off for above reason
             # 'changes': changes
         }
@@ -236,8 +236,10 @@ def main():
 
     try:
         with open(DB_PATH, 'r') as f:
-            dataset = json.loads(f)
-    except:
+            dataset = json.load(f)
+    except Exception as e:
+        print(f'error: {e}')
+
         auth = Auth.Token(env['GITHUB_TOKEN'])
         g = Github(auth=auth)
 
@@ -257,10 +259,14 @@ def main():
                 repo = g.get_repo(r)
 
                 labels = set([l.name for l in repo.get_labels()])
-                langs = labels.intersection(top_10_langs)
-                # if not part of top 10 langs, continue
-                if len(langs) == 0:
+                if 'python' not in labels:
                     continue
+
+                # ! filter for only python
+                # langs = labels.intersection(top_10_langs)
+                # # if not part of top 10 langs, continue
+                # if len(langs) == 0:
+                #     continue
 
                 raw_readme = str(repo.get_readme().decoded_content)
                 p = HTMLStripper()
@@ -270,28 +276,34 @@ def main():
                 print('\tadding issues...')
                 issues = get_issues(owner, repo_name)
 
-                print('\tadding commits...')
-                commits = get_commits(owner, repo_name, repo.default_branch)
+                # ! removed to save space
+                # print('\tadding commits...')
+                # commits = get_commits(owner, repo_name, repo.default_branch)
 
-                for l in langs:
-                    dataset[l][r] = {
-                        'readme': readme,
-                        'forks count': repo.forks_count,
-                        'stars count': repo.stargazers_count,
-                        'issues count': repo.get_issues(state='closed').totalCount,
-                        'issues': issues,
-                        'commits': commits
-                    }
+                # ! only add python
+                # for l in langs:
+                # dataset[l][r] = {
+                dataset[r] = {
+                    'readme': readme,
+                    'forks count': repo.forks_count,
+                    'stars count': repo.stargazers_count,
+                    'issues count': repo.get_issues(state='closed').totalCount,
+                    'issues': issues,
+                    # ! removed to save space
+                    # 'commits': commits
+                }
             except GithubException as e:
                 print(e)
                 continue
 
         g.close()
-        with open('sample_data.json', 'w') as f:
+
+        with open(DB_WRITE, 'w') as f:
             json.dump(dataset, f)
 
-    for l in top_10_langs:
-        print(f'{l}: {len(dataset[l])} repos')
+    # ! currently only processes python
+    # for l in top_10_langs:
+    #     print(f'{l}: {len(dataset[l]) if l in dataset else 0} repos')
 
 
 if __name__ == "__main__":
