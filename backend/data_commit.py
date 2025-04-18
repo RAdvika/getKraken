@@ -12,8 +12,7 @@ import pandas as pd
 
 from html.parser import HTMLParser
 from dotenv import dotenv_values
-from github import Github, GithubException
-from github import Auth
+from github import Github, GithubException, Auth
 
 
 class HTMLStripper(HTMLParser):
@@ -35,7 +34,7 @@ env = dotenv_values('./env/.env')
 
 DB_PATH = './db/sample_data.json'
 DB_WRITE = './db/sample_data.json'
-SAMPLE_SIZE = 3000
+SAMPLE_SIZE = 250
 
 GRAPHQL_URL = 'https://api.github.com/graphql'
 
@@ -61,14 +60,6 @@ query($owner: String!, $repo: String!) {
         body 
         title
         url
-        closedByPullRequestsReferences(first: 5, includeClosedPrs: true) {
-          nodes {
-            number
-            title
-            url
-            body
-          }
-        }
       }
     }
   }
@@ -106,6 +97,24 @@ GIT_DIFF_FILE_A = re.compile(r"a/\S+")
 GIT_DIFF_FILE_B = re.compile(r"b/\S+")
 COMMIT_TITLE_FILTER = r"(^Update [.\S]*$)|(^Merge branch '.*' into [\S]*$)"
 
+README_FILTER_LIST = [
+    r'[dD]atabase of \S',
+    r'[cC]ollection of \S',
+    r'for beginners'
+]
+README_FILTER = re.compile('|'.join(README_FILTER_LIST))
+
+REPO_FILTER_LIST = [
+    r"[tT]utorial",
+    "octocat",
+    "vscode",
+    r"[rR]oadmap",
+    r"[cC]hallenges",
+    r"[iI]ntro.[tT]o",
+    r"[wW]iki"
+]
+REPO_FILTER = re.compile('|'.join(REPO_FILTER_LIST))
+
 
 def get_diffs(diff_raw: str):
     files = GIT_DIFF_PAT.findall(diff_raw)
@@ -136,32 +145,12 @@ def get_issues(owner: str, repo_name: str):
 
     issues = []
     for issue in issues_from_request:
-        raw_prs = issue['closedByPullRequestsReferences']['nodes']
-        if raw_prs:
-            print(f'issue #{issue['number']}: {issue['title']} ({issue['url']})')
-            prs = []
-            for pr in raw_prs:
-                print(f'  - PR #{pr['number']} [{pr['title']}]({pr['url']})')
-
-                url = f'https://api.github.com/repos/{owner}/{repo_name}/pulls/{pr['number']}'
-                diff_raw = requests.get(url, headers=GRAPHQL_DIFF_HEADER).text
-
-                # ? not sure if to format diffs or not
-                # changes = get_diffs(diff_raw)
-
-                prs.append({
-                    'number': pr['number'],
-                    'body': pr['body'],
-                    'url': pr['url'],
-                    'diff': diff_raw
-                })
-
-            issues.append({
-                'title': issue['title'],
-                'body': issue['body'],
-                'url': issue['url'],
-                'pull requests': prs
-            })
+        print(f'\tissue #{issue['number']}: {issue['title']} ({issue['url']})')
+        issues.append({
+            'title': issue['title'],
+            'body': issue['body'],
+            'url': issue['url']
+        })
     return issues
 
 
@@ -169,8 +158,8 @@ def get_commits(owner: str, repo_name: str, default_branch: str):
     total_commits = []
     commits, after = get_commit_page(owner, repo_name, default_branch)
     total_commits.extend(commits)
-    # add at least 450 commits per repo if possible
-    while len(total_commits) < 450 and after:
+    # add at least 250 commits per repo if possible
+    while len(total_commits) < 250 and after:
         commits, after = get_commit_page(owner, repo_name, default_branch, after=after)
         total_commits.extend(commits)
     return total_commits
@@ -194,21 +183,12 @@ def get_commit_page(owner: str, repo_name: str, default_branch: str, after: str 
         if re.match(COMMIT_TITLE_FILTER, node['messageHeadline']):
             continue
 
-        # ! this code adds diffs to all commits, currently this is turned off because of rate limits
-        # ! if it was turned on, it would take 50 repos to hit the limit if each repo was given 100 commits
-        # ! i believe that's too few commits, so i've turned this feature off for now
-        # url = f'https://api.github.com/repos/{owner}/{repo_name}/commits/{node['oid']}'
-        # diff_raw = requests.get(url, headers=GRAPHQL_DIFF_HEADER).text
-        # changes = get_diffs(diff_raw)
-
-        print(f'  - commit {node['oid']} {node['messageHeadline']}')
+        print(f'\tcommit {node['oid']} {node['messageHeadline']}')
         commit = {
             'sha': node['oid'],
             'header': node['messageHeadline'],
             'body': node['messageBody'],
-            'url': node['url'],
-            # ! turned off for above reason
-            # 'changes': changes
+            'url': node['url']
         }
 
         commits.append(commit)
@@ -244,53 +224,50 @@ def main():
         g = Github(auth=auth)
 
         dataset = {}
-        for l in top_10_langs:
-            dataset[l] = {}
+        for r in df['URL']:
+            if len(dataset) >= SAMPLE_SIZE:
+                break
 
-        for i, r in enumerate(df['URL'][:SAMPLE_SIZE]):
             s = r.split('/')
             r = f'{s[-2]}/{s[-1]}'
             owner = r.split('/')[0]
             repo_name = r.split('/')[1]
 
-            print(f'({i + 1}/{SAMPLE_SIZE}) adding repo {r}')
+            print(f'({len(dataset)}/{SAMPLE_SIZE}) adding repo {r}')
 
             try:
-                repo = g.get_repo(r)
-
-                labels = set([l.name for l in repo.get_labels()])
-                if 'python' not in labels:
+                if REPO_FILTER.search(r):
+                    print('\tskip for repo filter')
                     continue
 
-                # ! filter for only python
-                # langs = labels.intersection(top_10_langs)
-                # # if not part of top 10 langs, continue
-                # if len(langs) == 0:
-                #     continue
+                repo = g.get_repo(r)
+                if 'python' not in repo.get_topics():
+                    print('\tskip for not python')
+                    continue
 
                 raw_readme = str(repo.get_readme().decoded_content)
                 p = HTMLStripper()
                 p.feed(raw_readme)
                 readme = p.get_data()
 
+                if README_FILTER.search(readme):
+                    print('\tskip for readme filter')
+                    continue
+
                 print('\tadding issues...')
                 issues = get_issues(owner, repo_name)
 
-                # ! removed to save space
-                # print('\tadding commits...')
-                # commits = get_commits(owner, repo_name, repo.default_branch)
+                print('\tadding commits...')
+                commits = get_commits(owner, repo_name, repo.default_branch)
 
-                # ! only add python
-                # for l in langs:
-                # dataset[l][r] = {
                 dataset[r] = {
                     'readme': readme,
+                    'short desc': str(df[df['URL'] == r]['Description']),
                     'forks count': repo.forks_count,
                     'stars count': repo.stargazers_count,
                     'issues count': repo.get_issues(state='closed').totalCount,
                     'issues': issues,
-                    # ! removed to save space
-                    # 'commits': commits
+                    'commits': commits
                 }
             except GithubException as e:
                 print(e)
@@ -300,10 +277,6 @@ def main():
 
         with open(DB_WRITE, 'w') as f:
             json.dump(dataset, f)
-
-    # ! currently only processes python
-    # for l in top_10_langs:
-    #     print(f'{l}: {len(dataset[l]) if l in dataset else 0} repos')
 
 
 if __name__ == "__main__":
