@@ -31,7 +31,7 @@ CORS(app)
 
 
 # Sample search for repos in specific lang
-def sample_search(query, lang):
+def sample_search(query, lang, pagination_begin, pagination_end):
     input_json = dict()
 
     for l in lang:
@@ -39,7 +39,7 @@ def sample_search(query, lang):
         if lang_json:
             input_json[l] = lang_json
     
-    return ranker(input_json, query)[:5].to_json(orient='records')
+    return ranker(input_json, query)[pagination_begin:pagination_end].to_json(orient='records')
 
     
 
@@ -54,8 +54,10 @@ def repo_search():
     repo = request.args.get("repo")
     lang_str = request.args.get("lang")
     lang = lang_str.split(',') if lang_str else []
+    pagination_begin = int(request.args.get("pagination_begin"))
+    pagination_end = int(request.args.get("pagination_end"))
 
-    return sample_search(repo, lang)
+    return sample_search(repo, lang, pagination_begin, pagination_end)
 
 
 if 'DB_NAME' not in os.environ:

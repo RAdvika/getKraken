@@ -14,6 +14,7 @@
                 <input placeholder="Search for a GitHub Repository" id="filter-text-val" onkeydown="handleKeyPress(event)">
             </div>
             <div class="tag-buttons" id="tag-buttons-container"></div>
+            <div id="pagination-container"></div>
         </div>
         <div id="card-container"></div>
 
@@ -77,11 +78,13 @@
 
     <script>
         let selectedTags = [];
+        let selectedPaginationNumber = 1;
+
         const tagList = ['javascript', 'python', 'java', 'typescript', 'csharp', 'cpp', 'php', 'shell', 'c', 'ruby'];
 
 
-        function buttonTemplate(label, eventHandler) {
-        return `<button class="tag-button" onclick="${eventHandler}">
+        function buttonTemplate(label, eventHandler, selectedByDefault = false) {
+        return `<button class="tag-button ${selectedByDefault ? 'selected' : ''}" onclick="${eventHandler}">
                     ${label}
                 </button>`;
         }
@@ -98,17 +101,37 @@
             }
         }
 
+        function togglePaginationNumber(paginationNumber) {
+            const button = event.target;
+            button.classList.add('selected');
+            selectedPaginationNumber = paginationNumber;
+            // credits to AI for this line
+            const siblings = Array.from(button.parentNode.children).filter(child => child !== button);
+            for (let sibling of siblings) {
+                sibling.classList.remove('selected');
+            }
+        }
+
 
             function generateButtonGrid() {
                 let gridHtml = '<div class="button-grid">';
                 tagList.forEach((tag) => {
-                    gridHtml += buttonTemplate(tag, `toggleTagSelection('${tag}')`);
+                    gridHtml += buttonTemplate(tag, `toggleTagSelection('${tag}')`, true);
                 });
                 gridHtml += '</div>';
                 return gridHtml;
             }
 
+            function generatePaginationBar() {
+                let barHtml = '<div class="pagination-bar">';
+                [1, 2, 3].forEach((paginationNumber) => {
+                    barHtml += buttonTemplate(paginationNumber, `togglePaginationNumber('${paginationNumber}')`)
+                });
+                return barHtml;
+            }
+
             document.getElementById('tag-buttons-container').innerHTML = generateButtonGrid();
+            document.getElementById('pagination-container').innerHTML = generatePaginationBar();
 
             function handleKeyPress(event) {
                         if (event.key == "Enter") {
@@ -144,7 +167,9 @@
                 fetch("/repo?" + new URLSearchParams(
                     { 
                     repo : document.getElementById("filter-text-val").value,  
-                    lang : selectedTags
+                    lang : selectedTags,
+                    pagination_begin: (selectedPaginationNumber - 1) * 5,
+                    pagination_end: selectedPaginationNumber * 5
                     }
                 ).toString())
                 .then(response => response.json())
