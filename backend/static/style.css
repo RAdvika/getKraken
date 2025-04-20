@@ -77,6 +77,10 @@ body.light {
     font-weight: bold;
 }
 
+.tag-button.demo-mode-disabled {
+    text-decoration: line-through;
+}
+
 .light .tag-button {
     border: 1px solid #000;
     color: #000;

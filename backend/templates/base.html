@@ -1,5 +1,5 @@
 <!doctype html>
-<title>{% block title %}{% endblock %} - Flaskr</title>
+<title>Get_Kraken</title>
 
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 <body>
@@ -38,6 +38,13 @@
             </div>
         </div>  
     </div>
+
+    <script>
+        const IS_DEMO_MODE = {{ is_demo_mode }};
+        if (IS_DEMO_MODE) {
+            alert("This app is running in demo mode. Only Python is available.");
+        }
+    </script>
 
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
@@ -131,9 +138,18 @@
             container.innerHTML = tagList.map(tag => `<button class="tag-button" data-tag="${tag}">${tag}</button>`).join('');
 
             container.querySelectorAll('.tag-button').forEach(button => {
+                if (IS_DEMO_MODE) {
+                    const tag = button.dataset.tag;
+                    if (tag !== "python") {
+                        button.classList.add('demo-mode-disabled');
+                    }
+                }
                 button.addEventListener('click', () => {
                     const tag = button.dataset.tag;
                     const index = selectedTags.indexOf(tag);
+                    if (IS_DEMO_MODE && tag !== "python") {
+                        return;
+                    }
                     if (index === -1) {
                         selectedTags.push(tag);
                         button.classList.add('selected');
