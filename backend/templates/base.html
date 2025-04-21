@@ -174,8 +174,11 @@
             if (!res.ok) throw new Error(`HTTP error ${res.status}`);
 
             const json = await res.json();
+            console.log("Server response:", json);
+
             totalItems = json.total;
-            return JSON.parse(json.results);
+
+            return json.results;
         }
 
         function renderResults(items) {
