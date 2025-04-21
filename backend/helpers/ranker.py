@@ -131,7 +131,7 @@ class Ranker:
 
         readme_texts = [repo.readme for repo in self.repositories]
 
-        vectorizer = TfidfVectorizer(max_features=1000, stop_words="english")
+        vectorizer = TfidfVectorizer(max_features=2000, stop_words="english", ngram_range=(1, 2))
         tfidf_matrix = vectorizer.fit_transform(readme_texts)
         query_vector = vectorizer.transform([" ".join(keywords)])
         readme_scores = cosine_similarity(query_vector, tfidf_matrix).flatten()
@@ -154,27 +154,27 @@ class Ranker:
 
 
 
-def test_ranker():
-    with open("db/sample_data.json") as f:
-        json_data = json.load(f)
+# def test_ranker():
+#     with open("db/sample_data.json") as f:
+#         json_data = json.load(f)
 
-    queries = [
-        "Build a webpage in JavaScript",
-        "Implement caching in Python",
-        "Data analysis using Python",
-        "Optimize loops in C++",
-        "Create a REST API in PHP",
-    ]
+#     queries = [
+#         "Build a webpage in JavaScript",
+#         "Implement caching in Python",
+#         "Data analysis using Python",
+#         "Optimize loops in C++",
+#         "Create a REST API in PHP",
+#     ]
 
-    ranker = Ranker(json_data)
+#     ranker = Ranker(json_data)
 
-    for q in queries:
-        ranker.rank(q)
-        print("—" * 60)
+#     for q in queries:
+#         ranker.rank(q)
+#         print("—" * 60)
 
 
-if __name__ == "__main__":
-    test_ranker()
+# if __name__ == "__main__":
+#     test_ranker()
 
 
 

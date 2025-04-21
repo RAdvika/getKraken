@@ -6,6 +6,10 @@ body{
     margin: 0;
 }
 
+a {
+    color: #8898e6;
+  }
+
 
 .full-body-container{
     background-color: #121212;

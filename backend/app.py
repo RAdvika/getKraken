@@ -30,7 +30,7 @@ def search(key: str, query: str) -> list[tuple[int, float]]:
     if key in cache:
         ranked_results = cache[key]
     else:
-        ranked_results = ranker.rank(query)
+        ranked_results = ranker.rank(query, 25)
         cache[key] = ranked_results
 
     return ranked_results
@@ -43,10 +43,15 @@ def format_json(ranked: tuple[int, float]):
     for idx, sim in ranked:
         repo = ranker.repositories[idx]
 
+        if isinstance(repo.readme, bytes):
+            readme_text = repo.readme.decode('utf-8')
+        else:
+            readme_text = repo.readme[2:]
+
         repo_json = {
             'repo_name': repo.repo_name,
             'language': 'python',
-            'readme_raw': repo.readme,
+            'readme_raw': readme_text,
             'similarity': sim,
             'stars' : repo.stars_count,
             'forks' : repo.forks_count,
