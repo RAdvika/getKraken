@@ -33,7 +33,7 @@ class HTMLStripper(HTMLParser):
 env = dotenv_values('./env/.env')
 
 DB_PATH = './db/sample_data.json'
-DB_WRITE = './db/sample_data.json'
+DB_WRITE = './db/n_sample_data.json'
 SAMPLE_SIZE = 250
 
 GRAPHQL_URL = 'https://api.github.com/graphql'
@@ -212,8 +212,6 @@ def main():
     print(df)
     print(df.shape)
 
-    top_10_langs = {'javascript', 'python', 'java', 'typescript', 'csharp', 'cpp', 'php', 'shell', 'c', 'ruby'}
-
     try:
         with open(DB_PATH, 'r') as f:
             dataset = json.load(f)
@@ -240,12 +238,12 @@ def main():
                     print('\tskip for repo filter')
                     continue
 
-                repo = g.get_repo(r)
-                if 'python' not in repo.get_topics():
+                repo_url = g.get_repo(r)
+                if 'python' not in repo_url.get_topics():
                     print('\tskip for not python')
                     continue
 
-                raw_readme = str(repo.get_readme().decoded_content)
+                raw_readme = str(repo_url.get_readme().decoded_content)
                 p = HTMLStripper()
                 p.feed(raw_readme)
                 readme = p.get_data()
@@ -258,14 +256,18 @@ def main():
                 issues = get_issues(owner, repo_name)
 
                 print('\tadding commits...')
-                commits = get_commits(owner, repo_name, repo.default_branch)
+                commits = get_commits(owner, repo_name, repo_url.default_branch)
+
+                repo_url = df[df['URL'] == f'https://github.com/{r}']
+                issues_count = repo_url['Issues'].iloc[0]
+                desc = repo_url['Description'].iloc[0]
 
                 dataset[r] = {
                     'readme': readme,
-                    'short desc': str(df[df['URL'] == r]['Description']),
-                    'forks count': repo.forks_count,
-                    'stars count': repo.stargazers_count,
-                    'issues count': repo.get_issues(state='closed').totalCount,
+                    'short desc': str(desc),
+                    'forks count': repo_url.forks_count,
+                    'stars count': repo_url.stargazers_count,
+                    'issues count': int(issues_count),
                     'issues': issues,
                     'commits': commits
                 }
