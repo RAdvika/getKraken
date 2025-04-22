@@ -30,32 +30,50 @@ def search(key: str, query: str) -> list[tuple[int, float]]:
     if key in cache:
         ranked_results = cache[key]
     else:
-        ranked_results = ranker.rank(query, 25)
+        ranked_results = ranker.rank(query)
         cache[key] = ranked_results
-
     return ranked_results
 
-def format_json(ranked: tuple[int, float]):
+def format_json(ranked: tuple[int, int, int, float], total: int):
     result_json = {
-        'total': len(ranked),
+        'total': total,
         'results':  []
     }
-    for idx, sim in ranked:
+    for idx, cm_idx, is_idx, sim in ranked:
         repo = ranker.repositories[idx]
+
+        commit = repo.commits[cm_idx]
+        #idk why this is causing out of index error 
+        # issue = repo.issues[is_idx]
+
 
         if isinstance(repo.readme, bytes):
             readme_text = repo.readme.decode('utf-8')
         else:
             readme_text = repo.readme[2:]
 
+        commit_json  = {
+            'title' : commit.header,
+            'body' : commit.body,
+            'url' : commit.url
+        }
+
+        # issue_json = {
+        #     'title' : issue.title,
+        #     'body' : issue.body,
+        #     'url' : issue.url
+        # }
+
         repo_json = {
             'repo_name': repo.repo_name,
             'language': 'python',
             'readme_raw': readme_text,
-            'similarity': sim,
+            'similarity': sim*100,
             'stars' : repo.stars_count,
             'forks' : repo.forks_count,
-            'issues' : repo.issues_count
+            'issues' : repo.issues_count,
+            'commit' : commit_json,
+            # 'issues_info' : issue_json
             }
 
         result_json['results'].append(repo_json)
@@ -86,7 +104,7 @@ def repo_search():
     end = start + per_page
     paginated = ranked[start:end]
 
-    return jsonify(format_json(paginated))
+    return jsonify(format_json(paginated, len(ranked)))
 
 
 
