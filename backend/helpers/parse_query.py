@@ -1,6 +1,9 @@
 import re
 import nltk
 from nltk.corpus import wordnet
+from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
+
 
 nltk.download("punkt_tab")
 nltk.download('punkt')
@@ -20,17 +23,44 @@ top_langs = [
 ]
 
 
-def preprocess_query(query, top=True):
+# def preprocess_query(query, top=True):
 
-    tokens = nltk.word_tokenize(query.lower())
+#     tokens = nltk.word_tokenize(query.lower())
 
-    expanded_tokens = set(tokens)
-    for token in tokens:
+#     expanded_tokens = set(tokens)
+#     for token in tokens:
+#         for syn in wordnet.synsets(token):
+#             for lemma in syn.lemmas():
+#                 expanded_tokens.add(lemma.name().replace("_", " "))
+
+#     return list(expanded_tokens)
+def preprocess_query(query: str, top: bool = True, max_synonyms: int = 3) -> list[str]:
+    lemmatizer = WordNetLemmatizer()
+
+    tokens = word_tokenize(query.lower())
+    filtered_tokens = [
+        lemmatizer.lemmatize(t) for t in tokens if t.isalpha()
+    ]
+
+    expanded_tokens = set(filtered_tokens)
+
+    for token in filtered_tokens:
+        synonyms = set()
         for syn in wordnet.synsets(token):
             for lemma in syn.lemmas():
-                expanded_tokens.add(lemma.name().replace("_", " "))
+                name = lemma.name().replace("_", " ").lower()
+                if name == token:
+                    continue
+                if len(name.split()) > 2:
+                    continue
+                synonyms.add(name)
+                if top and len(synonyms) >= max_synonyms:
+                    break
+            if top and len(synonyms) >= max_synonyms:
+                break
+        expanded_tokens.update(synonyms)
 
-    return list(expanded_tokens)
+    return expanded_tokens
 
 
 def all_langs():
