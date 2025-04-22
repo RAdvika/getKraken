@@ -6,11 +6,20 @@ body{
     margin: 0;
 }
 
+body.light {
+    color: #000;
+    background-color: #FFF;
+}
+
 
 .full-body-container{
     background-color: #121212;
     height: calc(100vh - 120px);
 
+}
+
+.light .full-body-container {
+    background-color: #FFF;
 }
 
 .header {
@@ -51,7 +60,7 @@ body{
 }
 
 
-.tag-button {
+.tag-button, .dark-light-toggle-button {
     padding: 10px 15px;
     border: 1px solid #F0F0F0;
     cursor: pointer;
@@ -66,6 +75,24 @@ body{
 .tag-button.selected {
     background-color: #323232;
     font-weight: bold;
+}
+
+.tag-button.demo-mode-disabled {
+    text-decoration: line-through;
+}
+
+.light .tag-button {
+    border: 1px solid #000;
+    color: #000;
+}
+
+.light .dark-light-toggle-button {
+    border: 1px solid #000;
+    color: #000;
+}
+
+.light .tag-button.selected {
+    background-color: #AAA;
 }
 
 .logo-wrapper{
@@ -99,6 +126,9 @@ body{
     border-left: 6px solid #FFFFFF;
     
 }
+.light .result-wrapper{
+    border-left: 6px solid #000;
+}
 .repo-info-wrapper{
     display: flex;
     flex-direction: column;
@@ -115,6 +145,9 @@ body{
     padding-bottom: 2%;
     border-bottom: 6px solid #FFFFFF;
 }
+.light .repo-info-header {
+    border-bottom: 6px solid #000;
+}
 
 .repo-title{
     width: 30%;
@@ -129,6 +162,9 @@ body{
     flex-direction: row;  
     gap: 40px; 
     font-size: 25px; 
+}
+.light .repo-metadata {
+    border-left: 2px solid #000;
 }
 
 .repo-info-content{
@@ -166,6 +202,11 @@ body{
 
 }
 
+.light .search-result-card {
+    background-color: #FFF;
+    border: 2px solid #000;
+}
+
 
 /* header for each search result box */
 .preview-header{
@@ -174,6 +215,10 @@ body{
     border-bottom: 2px solid #BABABA;
     justify-content: space-between;
     font-size: 30px;
+}
+
+.light .preview-header {
+    border-bottom: 2px solid #000;
 }
 
 /* child class of preview-header */
@@ -218,11 +263,20 @@ body{
     border-left: 2px solid #F0F0F0;
 }
 
+.light .similarity-bar-wrapper {
+    border-right: 2px solid #000;
+    border-left: 2px solid #000;
+}
+
 /* TODO:CHANGE WIDTH TO DYNAMICALLY GENERATE BAR */
 .similarity-bar{
     width: 60%;
     height: 10px;
     background-color: #F0F0F0;
+}
+
+.light .similarity-bar {
+    background-color: #AAA;
 }
 
 
@@ -282,6 +336,10 @@ body{
     color: #F0F0F0;
 }
 
+.light .loading, .light .error, .light .no-results {
+    color: #000;
+}
+
 .error {
     color: #ff6b6b;
 }
@@ -304,6 +362,12 @@ body{
     border-radius: 4px;
 }
 
+.light .page-button {
+    background-color: #AAA;
+    border: 1px solid #000;
+    color: #000;
+}
+
 .page-button.disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -311,4 +375,8 @@ body{
 
 .page-info {
     color: #F0F0F0;
+}
+
+.light .page-info {
+    color: #000;
 }

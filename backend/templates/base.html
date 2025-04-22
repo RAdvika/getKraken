@@ -1,5 +1,5 @@
 <!doctype html>
-<title>{% block title %}{% endblock %} - Flaskr</title>
+<title>Get_Kraken</title>
 
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 <body>
@@ -29,6 +29,7 @@
                         <div class="repo-stars"><div class="text">Stars:</div><div class="number">0</div></div>
                         <div class="repo-forks"><div class="text">Forks:</div><div class="number">0</div></div>
                         <div class="repo-issues"><div class="text">Issues:</div><div class="number">0</div></div>
+                        <div class="dark-light-toggle"><button class="dark-light-toggle-button" onclick="toggleDarkLightMode()">Toggle dark/light mode</button></div>
                     </div>
                     <div class="repo-info-content" id="repo-info-content">
                         Select a repository to view details.
@@ -37,6 +38,13 @@
             </div>
         </div>  
     </div>
+
+    <script>
+        const IS_DEMO_MODE = {{ is_demo_mode }};
+        if (IS_DEMO_MODE) {
+            alert("This app is running in demo mode. Only Python is available.");
+        }
+    </script>
 
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
@@ -130,9 +138,18 @@
             container.innerHTML = tagList.map(tag => `<button class="tag-button" data-tag="${tag}">${tag}</button>`).join('');
 
             container.querySelectorAll('.tag-button').forEach(button => {
+                if (IS_DEMO_MODE) {
+                    const tag = button.dataset.tag;
+                    if (tag !== "python") {
+                        button.classList.add('demo-mode-disabled');
+                    }
+                }
                 button.addEventListener('click', () => {
                     const tag = button.dataset.tag;
                     const index = selectedTags.indexOf(tag);
+                    if (IS_DEMO_MODE && tag !== "python") {
+                        return;
+                    }
                     if (index === -1) {
                         selectedTags.push(tag);
                         button.classList.add('selected');
@@ -260,6 +277,14 @@
             wrapper.className = "pagination";
             wrapper.append(prev, info, next);
             container.appendChild(wrapper);
+        }
+
+        function toggleDarkLightMode() {
+            if (document.body.classList.contains('light')) {
+                document.body.classList.remove('light');
+            } else {
+                document.body.classList.add('light');
+            }
         }
     </script>
 </body>

@@ -5,6 +5,8 @@ from flask_cors import CORS
 import pandas as pd
 from helpers import ranker
 
+DEMO_MODE = True
+
 # ROOT_PATH for linking with all your files. 
 # Feel free to use a config.py or settings.py with a global export variable
 os.environ['ROOT_PATH'] = os.path.abspath(os.path.join("..", os.curdir))
@@ -42,7 +44,7 @@ def sample_search(query, lang):
 
 @app.route("/")
 def home():
-    return render_template('base.html', title="sample html")
+    return render_template('base.html', is_demo_mode=("true" if DEMO_MODE else "false"))
 
 
 @app.route("/repo")
