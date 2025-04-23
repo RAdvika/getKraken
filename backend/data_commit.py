@@ -33,7 +33,7 @@ class HTMLStripper(HTMLParser):
 env = dotenv_values('./env/.env')
 
 DB_PATH = './db/sample_data.json'
-DB_WRITE = './db/n_sample_data.json'
+DB_WRITE = './db/sample_data.json'
 SAMPLE_SIZE = 250
 
 GRAPHQL_URL = 'https://api.github.com/graphql'
@@ -81,7 +81,10 @@ query ($owner: String!, $repo: String!, $branch: String!, $after: String) {
                 messageHeadline
                 messageBody
                 oid
-                url 
+                url
+                author {
+                  name
+                }
               }
             }
           }
@@ -95,12 +98,11 @@ query ($owner: String!, $repo: String!, $branch: String!, $after: String) {
 GIT_DIFF_PAT = re.compile(r"^diff --git .*$", re.MULTILINE)
 GIT_DIFF_FILE_A = re.compile(r"a/\S+")
 GIT_DIFF_FILE_B = re.compile(r"b/\S+")
-COMMIT_TITLE_FILTER = r"(^Update [.\S]*$)|(^Merge branch '.*' into [\S]*$)"
 
 README_FILTER_LIST = [
     r'[dD]atabase of \S',
     r'[cC]ollection of \S',
-    r'for beginners'
+    r'[fF]or [bB]eginners',
 ]
 README_FILTER = re.compile('|'.join(README_FILTER_LIST))
 
@@ -111,9 +113,17 @@ REPO_FILTER_LIST = [
     r"[rR]oadmap",
     r"[cC]hallenges",
     r"[iI]ntro.[tT]o",
-    r"[wW]iki"
+    r"[wW]iki",
+    r"[fF]or-?[bB]eginners",
+    'TheAlgorithms/Python',
+    'jakevdp/PythonDataScienceHandbook',
 ]
 REPO_FILTER = re.compile('|'.join(REPO_FILTER_LIST))
+
+COMMIT_HEADER_FILTER_LIST = [
+    r"[aA]utomat[ed|ic]",
+]
+COMMIT_HEADER_FILTER = re.compile('|'.join(COMMIT_HEADER_FILTER_LIST))
 
 
 def get_diffs(diff_raw: str):
@@ -158,8 +168,8 @@ def get_commits(owner: str, repo_name: str, default_branch: str):
     total_commits = []
     commits, after = get_commit_page(owner, repo_name, default_branch)
     total_commits.extend(commits)
-    # add at least 250 commits per repo if possible
-    while len(total_commits) < 250 and after:
+    # add at least 200 commits per repo if possible
+    while len(total_commits) < 200 and after:
         commits, after = get_commit_page(owner, repo_name, default_branch, after=after)
         total_commits.extend(commits)
     return total_commits
@@ -180,7 +190,11 @@ def get_commit_page(owner: str, repo_name: str, default_branch: str, after: str 
     commits = []
     for edge in history['edges']:
         node = edge['node']
-        if re.match(COMMIT_TITLE_FILTER, node['messageHeadline']):
+        # filter out all nodes w/ no message body
+        if not node['messageBody'] or len(node['messageBody'].strip()) == 0:
+            continue
+        # filter all headers in blacklist
+        if COMMIT_HEADER_FILTER.search(node['messageHeadline'].strip()):
             continue
 
         print(f'\tcommit {node['oid']} {node['messageHeadline']}')
@@ -188,7 +202,8 @@ def get_commit_page(owner: str, repo_name: str, default_branch: str, after: str 
             'sha': node['oid'],
             'header': node['messageHeadline'],
             'body': node['messageBody'],
-            'url': node['url']
+            'url': node['url'],
+            'author': node['author']['name']
         }
 
         commits.append(commit)
@@ -238,12 +253,15 @@ def main():
                     print('\tskip for repo filter')
                     continue
 
-                repo_url = g.get_repo(r)
-                if 'python' not in repo_url.get_topics():
+                repo_object = g.get_repo(r)
+                if 'python' not in repo_object.get_topics():
                     print('\tskip for not python')
                     continue
+                if repo_object.archived:
+                    print('\tskip for archived')
+                    continue
 
-                raw_readme = str(repo_url.get_readme().decoded_content)
+                raw_readme = str(repo_object.get_readme().decoded_content)
                 p = HTMLStripper()
                 p.feed(raw_readme)
                 readme = p.get_data()
@@ -256,17 +274,17 @@ def main():
                 issues = get_issues(owner, repo_name)
 
                 print('\tadding commits...')
-                commits = get_commits(owner, repo_name, repo_url.default_branch)
+                commits = get_commits(owner, repo_name, repo_object.default_branch)
 
-                repo_url = df[df['URL'] == f'https://github.com/{r}']
-                issues_count = repo_url['Issues'].iloc[0]
-                desc = repo_url['Description'].iloc[0]
+                repo_row = df[df['URL'] == f'https://github.com/{r}']
+                issues_count = repo_row['Issues'].iloc[0]
+                desc = repo_row['Description'].iloc[0]
 
                 dataset[r] = {
                     'readme': readme,
                     'short desc': str(desc),
-                    'forks count': repo_url.forks_count,
-                    'stars count': repo_url.stargazers_count,
+                    'forks count': repo_object.forks_count,
+                    'stars count': repo_object.stargazers_count,
                     'issues count': int(issues_count),
                     'issues': issues,
                     'commits': commits
