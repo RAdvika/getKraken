@@ -1,11 +1,9 @@
 import json
 import os
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
-import pandas as pd
-from helpers import ranker
-
-DEMO_MODE = True
+from typing import List, Tuple
+from helpers.ranker import Ranker
 
 # ROOT_PATH for linking with all your files. 
 # Feel free to use a config.py or settings.py with a global export variable
@@ -15,36 +13,80 @@ os.environ['ROOT_PATH'] = os.path.abspath(os.path.join("..", os.curdir))
 current_directory = os.path.dirname(os.path.abspath(__file__))
 
 # Specify the path to the JSON file relative to the current script
-json_file_path = os.path.join(current_directory, "sample_data.json")
+json_file_path = os.path.join(current_directory, '..', 'db', "sample_data.json")
 
 top_10_langs = {'javascript', 'python', 'java', 'typescript', 'csharp', 'cpp', 'php', 'shell', 'c', 'ruby'}
 with open(json_file_path, 'r') as file:
     data = json.load(file)
 
+ranker = Ranker(data)
 
 app = Flask(__name__)
 cache = {}
 CORS(app)
 
 
-# Sample search for repos in specific lang
-def sample_search(query, lang):
-    input_json = dict()
+def search(key: str, query: str) -> list[tuple[int, float]]:
+    if key in cache:
+        ranked_results = cache[key]
+    else:
+        ranked_results = ranker.rank(query)
+        cache[key] = ranked_results
+    return ranked_results
 
-    for l in lang:
-        lang_json = data.get(l)
-        if lang_json:
-            input_json[l] = lang_json
-    
+def format_json(ranked: tuple[int, int, int, float], total: int):
+    result_json = {
+        'total': total,
+        'results':  []
+    }
+    for idx, cm_idx, is_idx, sim in ranked:
+        repo = ranker.repositories[idx]
 
-    return ranker(input_json, query)
+        commit = repo.commits[cm_idx]
+        #idk why this is causing out of index error 
+        # issue = repo.issues[is_idx]
+
+
+        if isinstance(repo.readme, bytes):
+            readme_text = repo.readme.decode('utf-8')
+        else:
+            readme_text = repo.readme[2:]
+
+        commit_json  = {
+            'title' : commit.header,
+            'body' : commit.body,
+            'url' : commit.url
+        }
+
+        # issue_json = {
+        #     'title' : issue.title,
+        #     'body' : issue.body,
+        #     'url' : issue.url
+        # }
+
+        repo_json = {
+            'repo_name': repo.repo_name,
+            'language': 'python',
+            'readme_raw': readme_text,
+            'similarity': sim*100,
+            'stars' : repo.stars_count,
+            'forks' : repo.forks_count,
+            'issues' : repo.issues_count,
+            'commit' : commit_json,
+            # 'issues_info' : issue_json
+            }
+
+        result_json['results'].append(repo_json)
+
+    return result_json
+
 
     
 
 
 @app.route("/")
 def home():
-    return render_template('base.html', is_demo_mode=("true" if DEMO_MODE else "false"))
+    return render_template('base.html', title="sample html")
 
 
 @app.route("/repo")
@@ -55,27 +97,28 @@ def repo_search():
     per_page = int(request.args.get("per_page"))
     lang = lang_str.split(',') if lang_str else []
 
-    key  = f"{repo}_{'_'.join(lang)}"
+    key = f"{repo}_{'_'.join(sorted(lang))}"
+    ranked = search(key, repo)
 
-    index = page*per_page
-
-    if key in cache:
-        ranked_results = cache[key]
-    else:
-        ranked_results = sample_search(repo, lang)
-        cache[key] = ranked_results
-
-    start = (page - 1) * per_page
+    start = page * per_page
     end = start + per_page
-    paginated = ranked_results.iloc[start:end]
+    paginated = ranked[start:end]
 
-    paginated['similarity'] = paginated['similarity'] * 100
+    return jsonify(format_json(paginated, len(ranked)))
 
-    total =  len(ranked_results)
-    return {
-        "total": total,
-        "results" :paginated.to_json(orient='records')
-    }
+
+
+    # start = (page - 1) * per_page
+    # end = start + per_page
+    # paginated = ranked_results.iloc[start:end]
+
+    # paginated['similarity'] = paginated['similarity'] * 100
+
+    # total =  len(ranked_results)
+    # return {
+    #     "total": total,
+    #     "results" :paginated.to_json(orient='records')
+    # }
 
 
 if 'DB_NAME' not in os.environ:

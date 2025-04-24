@@ -1,3 +1,8 @@
-from .ranker import process_query_and_rank as ranker
+from .ranker import Ranker, Repository, Commit, Issue
 
-__all__ = ['ranker']
+
+__all__ = [
+    "Ranker",
+    "Repository",
+    "Commit",
+    "Issue"]

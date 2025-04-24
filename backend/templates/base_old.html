@@ -1,0 +1,154 @@
+<!doctype html>
+<title>{% block title %}{% endblock %} - Flaskr</title>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kanit&family=Montserrat&family=Open+Sans:wght@500&display=swap" rel="stylesheet">
+<body>
+    <div class="full-body-container">
+        <div class="top-text">
+            <div class="title-container">
+                <div class="title">GetKraken</div>
+            </div>
+            <div class="input-box" onclick="sendFocus()">
+                <img src="{{ url_for('static', filename='images/mag.png') }}" />
+                <input placeholder="Search for a GitHub Repository" id="filter-text-val" onkeydown="handleKeyPress(event)">
+            </div>
+            <div class="tag-buttons" id="tag-buttons-container">BUTTON HERE</div>
+        </div>
+        <div id="card-container">CARD HERE</div>
+
+
+
+    <script>
+        let selectedTags = [];
+        const tagList = ['javascript', 'python', 'java', 'typescript', 'csharp', 'cpp', 'php', 'shell', 'c', 'ruby'];
+
+
+        function buttonTemplate(label, eventHandler) {
+        return `<button class="tag-button" onclick="${eventHandler}">
+                    ${label}
+                </button>`;
+        }
+
+        function toggleTagSelection(tag) {
+            const button = event.target; 
+            const index = selectedTags.indexOf(tag);
+            if (index === -1) {
+                selectedTags.push(tag);
+                button.classList.add('selected'); 
+            } else {
+                selectedTags.splice(index, 1);
+                button.classList.remove('selected'); 
+            }
+        }
+
+
+            function generateButtonGrid() {
+                let gridHtml = '<div class="button-grid">';
+                tagList.forEach((tag) => {
+                    gridHtml += buttonTemplate(tag, `toggleTagSelection('${tag}')`);
+                });
+                gridHtml += '</div>';
+                return gridHtml;
+            }
+
+            document.getElementById('tag-buttons-container').innerHTML = generateButtonGrid();
+
+            function handleKeyPress(event) {
+                        if (event.key == "Enter") {
+                            displayCards();
+                        }
+                    }
+            
+
+            function answerCardTemplate(name, desc, stars, issues, forks, url) {
+                return `<div class="card">
+                    <div class="card-content">
+                        <h2>${name}</h2>
+                        <p>${desc}</p>
+                        <p>Stars: ${stars}</p>
+                        <p>Open Issues: ${issues}</p>
+                        <p>Forks: ${forks}</p>
+                    </div>
+                    <div class="hidden-content">
+                        <p>EXPANDED TEXT</p>
+                        <a href="${url}" class="card-link" target="_blank">View Repository</a>
+                    </div>
+                </div>`;}
+
+
+            function displayCards() {
+                document.getElementById("card-container").innerHTML = "";
+                if (selectedTags.length === 0) {
+                    alert("select atleast ONE language");
+                    return;
+                }
+                fetch("/repo?" + new URLSearchParams(
+                    { 
+                    repo : document.getElementById("filter-text-val").value,  
+                    lang : selectedTags
+                    }
+                ).toString())
+                .then(response => response.json())
+                    .then(cardsData => {
+                        //TODO: change to for loop for pagenation
+
+                        cardsData.forEach(cardData => {
+                            let tempDiv = document.createElement("div");
+                            tempDiv.innerHTML = answerCardTemplate(
+                                cardData.repo_name, 
+                                cardData.readme, 
+                                cardData.stars, 
+                                cardData.issues, 
+                                cardData.forks, 
+                                cardData.url);
+                            document.getElementById("card-container").appendChild(tempDiv);
+                        });
+                        initializeCards();
+                    });
+            }
+
+
+
+            function initializeCards() {
+                const cards = document.querySelectorAll('.card');
+                cards.forEach(card => {
+                    card.addEventListener('click', function() {
+                        cards.forEach(c => {
+                        if (c !== this && c.classList.contains('expanded')) {
+                            c.classList.remove('expanded');
+                            }
+                        });
+                        this.classList.toggle('expanded');
+                    });
+                });
+            }
+
+            document.addEventListener('DOMContentLoaded', () => {
+                initializeCards();
+                document.getElementById('tag-buttons-container').innerHTML = generateButtonGrid();
+            });
+
+
+            // function sendFocus(){
+            //     document.getElementById('filter-text-val').focus()
+            // }
+
+            // function filterText(){
+            //     document.getElementById("answer-box").innerHTML = ""
+            //     console.log(document.getElementById("filter-text-val").value)
+            //     fetch("/episodes?" + new URLSearchParams({ title: document.getElementById("filter-text-val").value }).toString())
+            //     .then((response) => response.json())
+            //     .then((data) => data.forEach(row => {
+                    
+            //         let tempDiv = document.createElement("div")
+            //         tempDiv.innerHTML = answerBoxTemplate(row.title,row.descr,row.imdb_rating)
+            //         document.getElementById("answer-box").appendChild(tempDiv)
+            //     }));
+
+            // }
+                
+    </script>
+</body>

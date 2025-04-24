@@ -171,13 +171,28 @@
             const cardContainer = document.getElementById("card-container");
             repoDataMap.clear();
             cardContainer.innerHTML = "<div class='loading'>Loading results...</div>";
+
             try {
                 if (!selectedTags.length) throw new Error("Please select at least one language");
 
                 const query = document.getElementById("filter-text-val").value.trim();
+
+                // Guard: if currentPage is too high (e.g., after filtering), reset it before fetching
+                const estimatedTotalPages = Math.ceil(totalItems / ITEM_PER_PAGE);
+                if (currentPage > estimatedTotalPages && estimatedTotalPages > 0) {
+                    currentPage = estimatedTotalPages;
+                }
+
                 const data = await fetchRepoData(query, selectedTags, currentPage, ITEM_PER_PAGE);
 
+                // Guard: if server returns zero items but totalItems > 0, it means currentPage is too high
+                if (data.length === 0 && currentPage > 1) {
+                    currentPage--;
+                    return displayCards();
+                }
+
                 renderResults(data);
+                renderPaginationControls(); // make sure controls are updated too
             } catch (err) {
                 cardContainer.innerHTML = `<div class='error'>Error: ${err.message}</div>`;
                 console.error(err);
@@ -191,8 +206,11 @@
             if (!res.ok) throw new Error(`HTTP error ${res.status}`);
 
             const json = await res.json();
+            console.log("Server response:", json);
+
             totalItems = json.total;
-            return JSON.parse(json.results);
+
+            return json.results;
         }
 
         function renderResults(items) {
@@ -222,7 +240,7 @@
             renderPaginationControls();
         }
 
-        function answerCardTemplate(name, language, readme, similarity = 0) {
+        function answerCardTemplate(name, language, readme, similarity) {
             const snippet = readme.slice(0, 350).replace(/\\\S+|b\['#]/g, '') + ' ...';
             const shortName = name.split('/').pop();
             return `
@@ -256,6 +274,7 @@
         function renderPaginationControls() {
             const container = document.getElementById("pagination-container");
             const totalPages = Math.ceil(totalItems / ITEM_PER_PAGE);
+            if (currentPage > totalPages) currentPage = totalPages;
             container.innerHTML = "";
             if (totalPages <= 1) return;
 
@@ -265,13 +284,13 @@
             prev.onclick = async () => { if (currentPage > 1) { currentPage--; await displayCards(); } };
 
             const next = document.createElement("button");
-            next.className = `page-button ${currentPage === totalPages ? 'disabled' : ''}`;
+            next.className = `page-button ${currentPage === totalPages-1 ? 'disabled' : ''}`;
             next.innerHTML = "Next &raquo;";
             next.onclick = async () => { if (currentPage < totalPages) { currentPage++; await displayCards(); } };
 
             const info = document.createElement("span");
             info.className = "page-info";
-            info.textContent = `Page ${currentPage} of ${totalPages}`;
+            info.textContent = `Page ${currentPage} of ${totalPages-1}`;
 
             const wrapper = document.createElement("div");
             wrapper.className = "pagination";
