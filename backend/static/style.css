@@ -104,6 +104,15 @@ a.light{
     background-color: #AAA;
 }
 
+.tag-select-wrapper {
+    padding-top: 30px;
+}
+
+#tag-select {
+    width: 80px;
+    height: 30px;
+}
+
 .logo-wrapper{
     background-color: #F0F0F0;
     width: 30%;
@@ -196,6 +205,11 @@ a.light{
     border-left: 2px solid #000;
 }
 
+.repo-stars, .repo-forks, .repo-issues {
+    font-size: 25px;
+    padding-right: 15px;
+}
+
 .repo-info-content{
     overflow-y: scroll;
     padding-top: 15px;
@@ -255,6 +269,12 @@ a.light{
 /* child class of preview-header */
 .preview-repo-name{
     padding: 0px  8px;
+    /* written with AI */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    min-width: 0;
 }
 
 
