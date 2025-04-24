@@ -86,15 +86,6 @@ class Ranker:
         issue_texts = self.clean_text(issue_texts)
 
 
-        self.vectorizer = TfidfVectorizer(
-                    max_features=1000,
-                    stop_words="english",
-                    ngram_range=(1, 2)
-                )
-        
-        self.svd        = TruncatedSVD(n_components=10)
-        self.normalizer = Normalizer()
-
         self.readme_pipeline = make_pipeline(
             TfidfVectorizer(max_features=2000, stop_words="english",ngram_range=(1, 3)),
             TruncatedSVD(n_components=200),
@@ -105,14 +96,17 @@ class Ranker:
         )
         
         self.issue_pipeline = make_pipeline(
-            TfidfVectorizer(max_features=50, stop_words="english",ngram_range=(1, 2)),
+            TfidfVectorizer(max_features=200, stop_words="english",ngram_range=(1, 2)),
             TruncatedSVD(n_components=10),
         )
-        # self.readme_matrix = self.lsa_pipeline.fit_transform(readme_texts)
+
         self.readme_matrix = self.readme_pipeline.fit_transform(readme_texts)
-        
         self.commit_lsa = self.commit_pipeline.fit(commit_texts)
         self.issues_lsa = self.issue_pipeline.fit(issue_texts)
+
+        del readme_texts
+        del commit_texts
+        del issue_texts
 
 
     def clean_text(self, texts: List[str], max_len: int = 15) -> List[str]:
@@ -198,7 +192,7 @@ class Ranker:
 
 
     
-    def rank(self, query:  str, top_k = 50):
+    def rank(self, query:  str, top_k = 56):
         #expanded query using NLTK wordNet
         keywords = preprocess_query(query)
         print(f"\nQuery: {query}")
@@ -216,12 +210,13 @@ class Ranker:
             reverse=True
             )[:top_k]
 
+        
+        query_vec_cm = self.commit_pipeline.transform([" ".join(keywords)])
+        query_vec_is = self.issue_pipeline.transform([" ".join(keywords)])
         results = []
 
         for idx, rm_score in top_results:
             repo = self.repositories[idx]
-            query_vec_cm = self.commit_pipeline.transform([" ".join(keywords)])
-            query_vec_is = self.issue_pipeline.transform([" ".join(keywords)])
 
             cm_idx, cm_score = self.max_similarity_score(
                 query_vec_cm, 
@@ -243,109 +238,9 @@ class Ranker:
                 (cm_idx, cm_score),
                 (is_idx, is_score)
             )
+
+ 
             results.append((idx, cm_idx, is_idx, w_score))
 
         ranked_result = sorted(results, key=lambda x: x[3], reverse=True)
         return ranked_result
-
-
-
-
-# def test_ranker():
-#     with open("db/sample_data.json") as f:
-#         json_data = json.load(f)
-
-#     queries = [
-#         "Build a webpage in JavaScript",
-#         "Implement caching in Python",
-#         "Data analysis using Python",
-#         "Optimize loops in C++",
-#         "Create a REST API in PHP",
-#     ]
-
-#     ranker = Ranker(json_data)
-
-#     for q in queries:
-#         ranker.rank(q)
-#         print("—" * 60)
-
-
-# if __name__ == "__main__":
-#     test_ranker()
-
-
-
-
-
-
-
-
-
-
-# def rank_repositories(keywords, df):
-#     """
-#     Use TF-IDF + cosine similarity to rank repos by relevance to keyword query.
-#     Returns ranked DataFrame.
-#     """
-#     if not keywords:
-#         return pd.DataFrame()
-    
-#     query_text = " ".join(keywords)
-#     vectorizer = TfidfVectorizer(max_features=1000, stop_words="english")
-
-#     tfidf_matrix = vectorizer.fit_transform(df["readme"])
-#     query_vector = vectorizer.transform([query_text])
-
-#     similarity_scores = cosine_similarity(query_vector, tfidf_matrix).flatten()
-#     df["similarity"] = similarity_scores
-
-#     ranked = df.sort_values(by="similarity", ascending=False)
-#     return ranked[["repo_name","readme_raw", "language", "similarity"]]
-
-
-# def process_query_and_rank(json_file : dict, query : str):
-#     """
-#     Given a user query, extract keywords and rank matching repos from dataset.
-#     Returns ranked result or empty list.
-#     """
-#     keywords = preprocess_query(query)
-#     print(f"\nQuery: {query}")
-#     print(f"Keywords: {keywords}")
-#     print(f"Language: {list(json_file.keys())}")
-
-#     df = parse_data(json_file)
-
-#     # if language:
-#     #     df = df[df["language"] == language.lower()]
-#     #     if df.empty:
-#     #         print(f"No repositories found for language: {language}")
-#     #         return pd.DataFrame()
-
-#     ranked = rank_repositories(keywords, df)
-
-#     if ranked.empty or ranked["similarity"].max() == 0:
-#         print("No matching repositories found.")
-#     else:
-#         print("Top Results:")
-#         print(ranked.head())
-
-#     return ranked
-
-
-# def test_ranker():
-#     json_path = "db/sample_data.json"
-#     queries = [
-#         "Build a webpage in JavaScript",
-#         "Implement caching in Python",
-#         "Data analysis using Python",
-#         "Optimize loops in C++",
-#         "Create a REST API in PHP",
-#     ]
-
-#     for q in queries:
-#         process_query_and_rank(json_path, q)
-#         print("—" * 60)
-
-
-# if __name__ == "__main__":
-#     test_ranker()
