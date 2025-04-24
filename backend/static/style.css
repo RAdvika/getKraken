@@ -11,6 +11,13 @@ body.light {
     background-color: #FFF;
 }
 
+a{
+    color: aqua;
+}
+
+a.light{
+    color: blue;
+}
 
 .full-body-container{
     background-color: #121212;
@@ -79,6 +86,8 @@ body.light {
 
 .tag-button.demo-mode-disabled {
     text-decoration: line-through;
+    opacity: 10%;
+    pointer-events: none;
 }
 
 .light .tag-button {
@@ -124,8 +133,17 @@ body.light {
 .result-wrapper{
     width: 75%;
     border-left: 6px solid #FFFFFF;
-    
+    max-width: 75%;
 }
+
+.result-wrapper img {
+    max-width: 100%;
+    height: auto;
+    object-fit: contain;
+}
+
+
+
 .light .result-wrapper{
     border-left: 6px solid #000;
 }
@@ -172,6 +190,7 @@ body.light {
     padding-top: 15px;
     height: 1200px;
     font-size: 15px;
+    max-width: 100%;
 }
 
 
@@ -180,7 +199,8 @@ body.light {
     font-family: monospace;
     white-space: pre-wrap; 
     word-break: break-word;
-    font-size: 20px;
+    font-size: 25px;
+    overflow-x: auto;
 }
 
 /* wrapper display for all search results */
@@ -199,7 +219,7 @@ body.light {
 .search-result-card{
     background-color: #191A1F;
     border: 2px solid #BABABA;
-
+    cursor: pointer;
 }
 
 .light .search-result-card {
