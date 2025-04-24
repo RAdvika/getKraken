@@ -31,13 +31,6 @@ cache = {}
 CORS(app)
 
 
-def search(key: str, query: str) -> list[tuple[int, float]]:
-    if key in cache:
-        ranked_results = cache[key]
-    else:
-        ranked_results = ranker.rank(query)
-        cache[key] = ranked_results
-    return ranked_results
 
 def format_json(ranked: tuple[int, int, int, float], total: int):
     result_json = {
@@ -89,28 +82,44 @@ def format_json(ranked: tuple[int, int, int, float], total: int):
 def meta_data_rank(a = 0.7,
                    b = 0.1,
                    y = 0.2, 
-                   scores: list[tuple[int, float]] = None)  -> list[tuple[int, float]]:
+                   repo_list: list[tuple[int, int, int, float]] = None)  -> list[tuple[int, int, int, float]]:
     
-    if scores is None or len(scores) == 0:
+    if not repo_list:
         return []
-    
-    results = []
 
-    for idx, sim in scores:
-        stars = ranker.repositories[idx].stars_count
-        forks = ranker.repositories[idx].forks_count
+    repo_array = np.array(repo_list)
+    indices = repo_array[:, 0].astype(int)
+    sims = repo_array[:, 3].astype(float)
 
-        stars_score = np.log(1 + stars)
-        forks_score = np.log(1 + forks)
-        rank_score  = a*sim + b*stars_score + y*forks_score 
+    stars = np.array([ranker.repositories[idx].stars_count for idx in indices])
+    forks = np.array([ranker.repositories[idx].forks_count for idx in indices])
 
-        results.append(idx,sim,rank_score)
+    stars_log = np.log1p(stars)
+    forks_log = np.log1p(forks)
 
-    ranked_result = sorted(results, key=lambda x: x[2], reverse=True)
+    max_stars_log = np.max(stars_log) or 1
+    max_fork_log = np.max(stars_log) or 1
 
-    return [(idx, sim) for idx, sim, _ in ranked_result]
+    stars_norm = stars_log / max_stars_log
+    forks_norm = forks_log / max_fork_log
 
-    
+    scores = a * sims + b * stars_norm + y * forks_norm
+
+    result_with_scores = list(zip(repo_list, scores))
+
+    ranked = sorted(result_with_scores, key=lambda x: x[1], reverse=True)
+
+    return [repo for repo, _ in ranked]
+
+
+def search(key: str, query: str) -> list[tuple[int, int, int, float]]:
+    if key in cache:
+        ranked_results = cache[key]
+    else:
+        search_result = ranker.rank(query)
+        ranked_results = meta_data_rank(repo_list=search_result)
+        cache[key] = ranked_results
+    return ranked_results    
 
 
 @app.route("/")
@@ -127,13 +136,13 @@ def repo_search():
     lang = lang_str.split(',') if lang_str else []
 
     key = f"{repo}_{'_'.join(sorted(lang))}"
-    ranked = search(key, repo)
+    ranked_result =  search(key, repo)
 
     start = (page - 1) * per_page
     end = start + per_page
-    paginated = ranked[start:end]
+    paginated = ranked_result[start:end]
 
-    return jsonify(format_json(paginated, len(ranked)))
+    return jsonify(format_json(paginated, len(ranked_result)))
 
 
 
