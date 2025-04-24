@@ -11,7 +11,12 @@
                     <input placeholder="Search for a GitHub Repository" id="filter-text-val" onkeydown="handleKeyPress(event)">
                 </div>
             </div>
-            <div class="tag-buttons-wrapper" id="tag-buttons-container"></div> 
+            <!--<div class="tag-buttons-wrapper" id="tag-buttons-container"></div> -->
+            <div class="tag-select-wrapper">
+                <select id="tag-select">
+                    <option value="python">Python</option>
+                </select>                  
+            </div>
             <div class="logo-wrapper">
                 <div class="logo-text">Get_Kraken</div>
             </div> 
@@ -104,7 +109,7 @@
         }
     </script>
     <script>
-        const selectedTags = [];
+        const selectedTags = ['python'];
         const tagList = ['javascript', 'python', 'java', 'typescript', 'csharp', 'cpp', 'php', 'shell', 'c', 'ruby'];
         const ITEM_PER_PAGE = 8;
         let currentPage = 1;
@@ -112,7 +117,7 @@
         const repoDataMap = new Map();
 
         document.addEventListener('DOMContentLoaded', () => {
-            initializeTagButtons();
+            //initializeTagButtons();
             setupSearch();
         });
 
@@ -131,7 +136,7 @@
                 displayCards();
             }
         }
-
+/*
         function initializeTagButtons() {
             const container = document.getElementById('tag-buttons-container');
             container.innerHTML = tagList.map(tag => `<button class="tag-button" data-tag="${tag}">${tag}</button>`).join('');
@@ -160,7 +165,7 @@
                 });
             });
         }
-
+*/
         function formatNumber(n) {
             n = Number(n);
             return isNaN(n) ? '-' : n >= 1e6 ? (n / 1e6).toFixed(2) + 'M' : n >= 1e3 ? (n / 1e3).toFixed(2) + 'K' : n.toString();
