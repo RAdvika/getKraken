@@ -118,7 +118,6 @@
 
         function setupSearch() {
             const input = document.getElementById('filter-text-val');
-            input.addEventListener('keydown', handleKeyPress);
             document.querySelector('.search-bar').addEventListener('click', () => input.focus());
         }
 
@@ -248,7 +247,8 @@
         function updateRepoInfo(data) {
             const wrapper = document.getElementById("repo-info-wrapper");
             markdownReadme = textRender(data.readme_raw)
-            wrapper.querySelector("#repo-title").textContent = data.repo_name;
+            const repoTitle = wrapper.querySelector("#repo-title");
+            repoTitle.innerHTML = `<a href="https://github.com/${data.repo_name}" target="_blank">${data.repo_name}</a>`;
             wrapper.querySelector("#repo-info-content").innerHTML = `<pre>${markdownReadme}</pre>`;
             wrapper.querySelector(".repo-stars .number").textContent = formatNumber(data.stars);
             wrapper.querySelector(".repo-forks .number").textContent = formatNumber(data.forks);
