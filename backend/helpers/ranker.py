@@ -38,11 +38,12 @@ class Issue:
 
 
 class Commit:
-    def __init__(self, sha : str, header: str, body:  str,  url: str):
+    def __init__(self, sha : str, header: str, body:  str,  url: str, author: str):
         self.sha = sha
         self.header = header
         self.body = body
         self.url = url
+        self.author = author
 
 class Repository:
     def __init__(self, repo_name : str,
@@ -125,7 +126,7 @@ class Ranker:
             if repo_name in black_list:
                 continue
             issues = [Issue(issue['title'], issue['body'], issue['url']) for issue in repo_data.get('issues', [])]
-            commits = [Commit(commit['sha'], commit['header'], commit['body'], commit['url']) for commit in repo_data.get('commits', [])]
+            commits = [Commit(commit['sha'], commit['header'], commit['body'], commit['url'], commit['author']) for commit in repo_data.get('commits', [])]
 
             repo = Repository(
                 repo_name=repo_name,

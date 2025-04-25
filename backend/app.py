@@ -15,9 +15,8 @@ os.environ['ROOT_PATH'] = os.path.abspath(os.path.join("..", os.curdir))
 # Get the directory of the current script
 current_directory = os.path.dirname(os.path.abspath(__file__))
 
-# # Specify the path to the JSON file relative to the current script
-# json_file_path = os.path.join(current_directory, '..', 'db', "sample_data.json")
-
+# Specify the path to the JSON file relative to the current script
+json_file_path = os.path.join(current_directory, '..', 'db', "sample_data.json")
 json_file_path = os.path.join(current_directory, "sample_data.json")
 
 
@@ -41,9 +40,7 @@ def format_json(ranked: tuple[int, int, int, float], total: int):
     for idx, cm_idx, is_idx, sim in ranked:
         repo = ranker.repositories[idx]
 
-        commit = repo.commits[cm_idx]
-        #idk why this is causing out of index error 
-        # issue = repo.issues[is_idx]
+
 
 
         if isinstance(repo.readme, bytes):
@@ -51,17 +48,30 @@ def format_json(ranked: tuple[int, int, int, float], total: int):
         else:
             readme_text = repo.readme[2:]
 
-        commit_json  = {
-            'title' : commit.header,
-            'body' : commit.body,
-            'url' : commit.url
-        }
-
-        # issue_json = {
-        #     'title' : issue.title,
-        #     'body' : issue.body,
-        #     'url' : issue.url
-        # }
+        if cm_idx >= 0:
+            commit = repo.commits[cm_idx]
+            commit_json  = {
+                'title' : commit.header,
+                'url' : commit.url,
+                'author' :  commit.author
+            }
+        else:
+            commit_json  = {
+                'title' : 'No Relevant Commits Found',
+                'url' : '',
+                'author' :  ''
+            }
+        if is_idx >= 0:
+            issue = repo.issues[is_idx]
+            issue_json = {
+                'title' : issue.title,
+                'url' : issue.url
+            }
+        else:
+            issue_json = {
+                'title' : 'No Relevant Issues Found',
+                'url' : ''
+            }            
 
         repo_json = {
             'repo_name': repo.repo_name,
@@ -73,7 +83,7 @@ def format_json(ranked: tuple[int, int, int, float], total: int):
             'forks' : repo.forks_count,
             'issues' : repo.issues_count,
             'commit' : commit_json,
-            # 'issues_info' : issue_json
+            'issues_info' : issue_json
             }
 
         result_json['results'].append(repo_json)

@@ -6,7 +6,7 @@ body{
     margin: 0;
 }
 
-.repo-info-commit{
+.repo-social{
     max-height: 25%;
     overflow-y: auto;
     overflow-x: auto;
@@ -20,13 +20,33 @@ body{
     padding: 0.5rem;
 }
 
-.repo-info-commit pre {
+.repo-social pre {
     white-space: pre-wrap;
     word-break: break-word;
     overflow-wrap: break-word;
     font-family: monospace;
     font-size: 16px;
-    margin: 0;
+    margin: 10;
+}
+
+.repo-commit {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.repo-commit > .commit-row {
+    display: flex;
+    justify-content: space-between; 
+    gap: 16px; 
+    align-items: center;
+}
+
+.commit-header, .commit-author {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 
