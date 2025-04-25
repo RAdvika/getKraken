@@ -36,6 +36,11 @@
                         <div class="repo-issues"><div class="text">Issues:</div><div class="number">0</div></div>
                         <div class="dark-light-toggle"><button class="dark-light-toggle-button" onclick="toggleDarkLightMode()">Toggle dark/light mode</button></div>
                     </div>
+                    <div class="repo-info-commit" id="repo-info-commit">
+                        <div class="commit-header" id="commit-header"></div>
+                        <div class="commit-author" id="commit-author"></div>
+                        <div class="commit-body" id="commit-body"></div>
+                    </div>
                     <div class="repo-info-content" id="repo-info-content">
                         Select a repository to view details.
                     </div>
@@ -111,7 +116,7 @@
     <script>
         const selectedTags = ['python'];
         const tagList = ['javascript', 'python', 'java', 'typescript', 'csharp', 'cpp', 'php', 'shell', 'c', 'ruby'];
-        const ITEM_PER_PAGE = 8;
+        const ITEM_PER_PAGE = 6;
         let currentPage = 1;
         let totalItems = 0;
         const repoDataMap = new Map();
@@ -258,6 +263,10 @@
             wrapper.querySelector(".repo-stars .number").textContent = formatNumber(data.stars);
             wrapper.querySelector(".repo-forks .number").textContent = formatNumber(data.forks);
             wrapper.querySelector(".repo-issues .number").textContent = formatNumber(data.issues);
+
+            wrapper.querySelector("#commit-header").innerHTML = `<pre>${data.commit.title}</pre>`;
+            wrapper.querySelector("#commit-author").innerHTML = `<pre>${data.commit.author}</pre>`;
+            wrapper.querySelector("#commit-body").innerHTML = `<pre>${textRender(data.commit.body)}</pre>`;
         }
 
         function renderPaginationControls() {
