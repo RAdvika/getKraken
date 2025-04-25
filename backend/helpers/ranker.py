@@ -7,6 +7,9 @@ from sklearn.decomposition import TruncatedSVD
 from sklearn.preprocessing import Normalizer
 from sklearn.pipeline import make_pipeline
 import numpy as np
+import re
+from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
+from nltk.stem import WordNetLemmatizer
 
 
 black_list = {
@@ -116,12 +119,20 @@ class Ranker:
 
 
     def clean_text(self, texts: List[str], max_len: int = 15) -> List[str]:
+        stem = WordNetLemmatizer()
         cleaned_texts = []
         for text in texts:
-            words = text.split()
-            # Filter out words longer than max_len or containing backslash or forward slash
-            filtered = [word for word in words if len(word) <= max_len and '\\' not in word and '/' not in word]
-            cleaned_texts.append(" ".join(filtered))
+            text = text.lower()
+            words = re.findall(r"\b\w+\b", text)
+            # words = text.split()
+            # # Filter out words longer than max_len or containing backslash or forward slash
+            # filtered = [word for word in words if len(word) <= max_len and '\\' not in word and '/' not in word]
+            words = [
+                stem.lemmatize(w)
+                for w in words
+                if len(w) <= max_len and w not in ENGLISH_STOP_WORDS
+            ]
+            cleaned_texts.append(" ".join(words))
         return cleaned_texts
 
 
