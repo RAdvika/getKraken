@@ -23,8 +23,8 @@
         </div>
         <div class="content">
             <div class="search-results-wrapper"> 
-                <div class="seach-result-display-wrapper" id="card-container"></div>
-                <div class="seach-result-pagination-wrapper" id="pagination-container"></div>
+                <div class="search-result-display-wrapper" id="card-container"></div>
+                <div class="search-result-pagination-wrapper" id="pagination-container"></div>
             </div>
             <div class="result-wrapper">
                 <div class="repo-info-wrapper" id="repo-info-wrapper">
@@ -37,17 +37,29 @@
                         <div class="dark-light-toggle"><button class="dark-light-toggle-button" onclick="toggleDarkLightMode()">Toggle dark/light mode</button></div>
                     </div>
                     <div class="repo-social" id="repo-info-commit">
-                        <div class="repo-commit">
-                            Relevant Commit
-                            <div class="commit-row">
-                                <div class="commit-header" id="commit-header"></div>
-                                <div class="commit-author" id="commit-author"></div>
+                        <div class="search-info-wrapper">
+                            <div class = "hidden-dimension-header">SVD Dimension:</div>
+                            <div class="hidden-dimension" id="hidden-dimension">
+                            </div>
+                            <div class = "cooccurence-matrix-header">Cooccurence Matrix terms:</div>
+                            <div class="cooccurence-matrix" id="cooccurence-matrix">
+                            </div>
+
+                        </div>
+                        <div class="social-data-wrapper">
+                            <div class="repo-commit">
+                                Relevant Commit
+                                <div class="commit-row">
+                                    <div class="commit-header" id="commit-header"></div>
+                                    <div class="commit-author" id="commit-author"></div>
+                                </div>
+                            </div>
+                            <div class="repo-issue">
+                                Relevant Issue
+                                <div class="issue-header" id="issue-header"></div>
                             </div>
                         </div>
-                        <div class="repo-issue">
-                            Relevant Issue
-                            <div class="issue-header" id="issue-header"></div>
-                        </div>
+
                     </div>
                     <div class="repo-info-content" id="repo-info-content">
                         Select a repository to view details.
@@ -58,7 +70,7 @@
     </div>
 
     <script>
-        const IS_DEMO_MODE = {{ is_demo_mode }};
+        const IS_DEMO_MODE = {{is_demo_mode}};
         if (IS_DEMO_MODE) {
             alert("This app is running in demo mode. Only Python is available.");
         }
@@ -272,10 +284,28 @@
             wrapper.querySelector(".repo-forks .number").textContent = formatNumber(data.forks);
             wrapper.querySelector(".repo-issues .number").textContent = formatNumber(data.issues);
 
-            wrapper.querySelector("#commit-header").innerHTML = `<pre><a href="${data.commit.url}" target="_blank" rel="noopener noreferrer">${data.commit.title}</a></pre>`;
-            wrapper.querySelector("#commit-author").innerHTML = `<pre>${data.commit.author}</pre>`;
+            if (data.commit.title) {
+                wrapper.querySelector("#commit-header").innerHTML = `<pre><a href="${data.commit.url}" target="_blank" rel="noopener noreferrer">${data.commit.title}</a></pre>`;
+                wrapper.querySelector("#commit-author").innerHTML = `<pre>${data.commit.author}</pre>`;
+            } else {
+                wrapper.querySelector("#commit-header").innerHTML = `<span class="no-data">No relevent commit found</span>`;
+                wrapper.querySelector("#commit-author").innerHTML = "";
+            }
+            
+            if (data.issues_info.title) {
+                wrapper.querySelector("#issue-header").innerHTML = `<pre><a href="${data.issues_info.url}" target="_blank" rel="noopener noreferrer">${data.issues_info.title}</a></pre>`;
+            } else {
+                wrapper.querySelector("#issue-header").innerHTML = `<span class="no-data">No relevent issue found</span>`;
+            }
 
-            wrapper.querySelector("#issue-header").innerHTML = `<pre><a href="${data.issues_info.url}" target="_blank" rel="noopener noreferrer">${data.issues_info.title}</a></pre>`;
+
+            const svdHTML = data.svd_features.map(term => `<div class="term-box">${term}</div>`).join("");
+            wrapper.querySelector("#hidden-dimension").innerHTML = svdHTML;
+
+            const coocHTML = data.coocmatrix.map(entry => `<div class="term-box">${entry}</div>`).join("");
+            wrapper.querySelector("#cooccurence-matrix").innerHTML = coocHTML;
+
+
         }
 
         function renderPaginationControls() {

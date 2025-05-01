@@ -11,8 +11,37 @@ body{
     overflow-y: auto;
     overflow-x: auto;
     border-bottom: 6px solid #FFFFFF;
+    display: flex;
 
 }
+
+
+.no-data {
+    color: #888888;
+    font-style: italic;
+}
+
+
+.social-data-wrapper{
+    width: 50%;
+    border-left: 5px solid #FFFFFF;
+    padding-left: 1%;
+    padding-bottom: 1%;
+}
+.search-info-wrapper{
+    width: 50%;
+    
+
+}
+
+.term-box{
+    display: inline-block;
+    margin: 5px;
+    padding: 6px 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 15px;
+    white-space: nowrap;}
 
 .repo-info-content {
     flex: 1;
@@ -276,11 +305,11 @@ a.light{
 }
 
 /* wrapper display for all search results */
-.seach-result-display-wrapper{
+.search-result-display-wrapper{
     display: flex;
     flex-direction: column;
     height: 90%;
-    justify-content: space-between;
+    /* justify-content: space-between; */
     overflow-y: hidden;
     gap: 20px;
 }
