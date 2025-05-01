@@ -3,8 +3,10 @@ import os
 from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
 from typing import List, Tuple
-from helpers.ranker import Ranker
+from helpers.ranker import Ranker, Result
 import numpy as np
+from functools import lru_cache
+
 DEMO_MODE = True
 
 
@@ -27,21 +29,25 @@ with open(json_file_path, 'r') as file:
 ranker = Ranker(data)
 
 app = Flask(__name__)
-cache = {}
+# cache = {}
 CORS(app)
 
 
 
-def format_json(ranked: tuple[int, int, int, float], total: int):
+def format_json(ranked: list[Result], total: int):
     result_json = {
         'total': total,
         'results':  []
     }
-    for idx, cm_idx, is_idx, sim in ranked:
+    for result in ranked:
+        idx = result.repo_idx
+        cm_idx = result.commit_idx
+        is_idx = result.issue_idx
+        coocmatrix_feature = result.coocmatrix_feature
+        hidden_d = result.hidden_d
+        sim = result.sim_score
+
         repo = ranker.repositories[idx]
-
-
-
 
         if isinstance(repo.readme, bytes):
             readme_text = repo.readme.decode('utf-8')
@@ -57,7 +63,7 @@ def format_json(ranked: tuple[int, int, int, float], total: int):
             }
         else:
             commit_json  = {
-                'title' : 'No Relevant Commits Found',
+                'title' : '',
                 'url' : '',
                 'author' :  ''
             }
@@ -69,13 +75,15 @@ def format_json(ranked: tuple[int, int, int, float], total: int):
             }
         else:
             issue_json = {
-                'title' : 'No Relevant Issues Found',
+                'title' : '',
                 'url' : ''
             }            
 
         repo_json = {
             'repo_name': repo.repo_name,
             'language': 'python',
+            'coocmatrix': coocmatrix_feature,
+            'svd_features': hidden_d,
             'short_desc' : repo.short_desc,
             'readme_raw': readme_text,
             'similarity': sim*100,
@@ -93,44 +101,42 @@ def format_json(ranked: tuple[int, int, int, float], total: int):
 def meta_data_rank(a = 0.7,
                    b = 0.1,
                    y = 0.2, 
-                   repo_list: list[tuple[int, int, int, float]] = None)  -> list[tuple[int, int, int, float]]:
+                   repo_list: list[Result] = None)  -> list[Result]:
     
-    if not repo_list:
-        return []
+    max_star = max_fork = 1
 
-    repo_array = np.array(repo_list)
-    indices = repo_array[:, 0].astype(int)
-    sims = repo_array[:, 3].astype(float)
+    for result in repo_list:
+        max_star = max(ranker.repositories[result.repo_idx].stars_count, max_star)
+        max_fork = max(ranker.repositories[result.repo_idx].forks_count, max_fork)
 
-    stars = np.array([ranker.repositories[idx].stars_count for idx in indices])
-    forks = np.array([ranker.repositories[idx].forks_count for idx in indices])
 
-    stars_log = np.log1p(stars)
-    forks_log = np.log1p(forks)
+    max_stars_log = np.log(max_star)
+    max_fork_log = np.log(max_fork)
 
-    max_stars_log = np.max(stars_log) or 1
-    max_fork_log = np.max(stars_log) or 1
+    result_with_scores = []
 
-    stars_norm = stars_log / max_stars_log
-    forks_norm = forks_log / max_fork_log
+    for result in repo_list:
+        stars = ranker.repositories[result.repo_idx].stars_count
+        forks = ranker.repositories[result.repo_idx].forks_count
+        sim = result.sim_score  
 
-    scores = a * sims + b * stars_norm + y * forks_norm
 
-    result_with_scores = list(zip(repo_list, scores))
+        stars_log = np.log1p(stars)
+        forks_log = np.log1p(forks)
+        stars_norm = stars_log / max_stars_log
+        forks_norm = forks_log / max_fork_log
+        score = a * sim + b * stars_norm + y * forks_norm
+        result_with_scores.append((result, score))
+
 
     ranked = sorted(result_with_scores, key=lambda x: x[1], reverse=True)
 
     return [repo for repo, _ in ranked]
 
-
-def search(key: str, query: str) -> list[tuple[int, int, int, float]]:
-    if key in cache:
-        ranked_results = cache[key]
-    else:
-        search_result = ranker.rank(query)
-        ranked_results = meta_data_rank(repo_list=search_result)
-        cache[key] = ranked_results
-    return ranked_results    
+@lru_cache(maxsize=50)
+def search(key: str, query: str) -> list[Result]:
+    ranked = ranker.rank(query)
+    return meta_data_rank(repo_list=ranked)
 
 
 @app.route("/")
