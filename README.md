@@ -1,4 +1,7 @@
-# 4300-Flask-Template-JSON
+# Get-Kraken: Github Repository Retrieval System
+
+Link to Website: http://4300showcase.infosci.cornell.edu:5265/
+
 
 ## Contents
 
